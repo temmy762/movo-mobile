@@ -1,0 +1,14 @@
+{
+  "name": "movo-mobile",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "sync-shared": "node scripts/sync-shared.mjs",
+    "check-shared": "node scripts/sync-shared.mjs --check",
+    "chauffeur": "npm run start --workspace chauffeur",
+    "typecheck": "npm run check-shared && npx tsc --noEmit -p apps/chauffeur"
+  }
+}
