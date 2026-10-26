@@ -30,7 +30,17 @@
       "expo-font",
       "expo-splash-screen",
       "expo-image",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Movo Chauffeur uses your location to send you nearby ride requests and to guide you to your rider.",
+          "locationAlwaysAndWhenInUsePermission": "While you're online, Movo Chauffeur shares your location in the background so riders see you arriving and you keep receiving nearby ride requests. It stops when you go offline.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

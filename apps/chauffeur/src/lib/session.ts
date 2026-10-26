@@ -81,7 +81,8 @@ export function signInErrorMessage(e: unknown): string {
 
 configureApi({
   baseUrl: API_URL,
-  getToken: () => useSession.getState().token,
+  /* The background location task can run before the UI restored the session */
+  getToken: () => useSession.getState().token ?? SecureStore.getItemAsync(TOKEN_KEY),
   onUnauthorized: () => {
     SecureStore.deleteItemAsync(TOKEN_KEY).catch(() => {});
     useSession.setState({ token: null, driver: null });

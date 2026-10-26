@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ApiError, driver as driverApi } from "@movo/api";
 import { Card, Icon, type IconName, colors, fontSizes, fonts, spacing } from "@movo/ui";
 import { useSession } from "@/lib/session";
+import { useShift } from "@/lib/shift";
 import { emailSupport, openWeb } from "@/lib/links";
 
 function Row({ icon, label, onPress, danger }: { icon: IconName; label: string; onPress: () => void; danger?: boolean }) {
@@ -19,6 +20,7 @@ function Row({ icon, label, onPress, danger }: { icon: IconName; label: string; 
 
 export default function Profile() {
   const { driver, signOut, clear } = useSession();
+  const goOffline = useShift((s) => s.goOffline);
   const [deleting, setDeleting] = useState(false);
 
   /* Required by the App Store and Google Play. The server refuses while a ride
@@ -37,6 +39,7 @@ export default function Profile() {
     setDeleting(true);
     try {
       await driverApi.deleteAccount();
+      await goOffline();
       await clear();
     } catch (e) {
       Alert.alert("Couldn't delete your account", e instanceof ApiError ? e.message : "Please try again.");
@@ -64,7 +67,7 @@ export default function Profile() {
         </Card>
 
         <Card style={styles.list}>
-          <Row icon="logOut" label="Sign out" onPress={signOut} />
+          <Row icon="logOut" label="Sign out" onPress={async () => { await goOffline(); await signOut(); }} />
           <View style={styles.divider} />
           <Row icon="trash" label={deleting ? "Deleting…" : "Delete account"} onPress={confirmDelete} danger />
         </Card>

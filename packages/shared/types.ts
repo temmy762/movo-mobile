@@ -43,3 +43,40 @@ export type OnboardingStatus = {
   tier: string | null;
   driverStatus: DriverStatus | null;
 };
+
+/** GET /api/driver/stats — earnings are the chauffeur's credited payouts */
+export type DriverStats = {
+  totalEarned: number;
+  todayEarned: number;
+  preBooked: number;
+  tripsCompleted: number;
+  tripsToday: number;
+};
+
+/** A ride offered to / held by the chauffeur (GET /api/bookings?status=PENDING,
+    GET /api/driver/active-booking). `earning` is the chauffeur's payout. */
+export type DriverBooking = {
+  id: string;
+  clientName: string;
+  pickup: string;
+  dropoff: string;
+  carTier?: string;
+  carName: string;
+  total: number;
+  fare?: number;
+  earning?: number;
+  scheduledAt?: string | null;
+  paymentStatus: string;
+  status: string;
+  startedAt?: string | null;
+  arrivedAt?: string | null;
+  enRouteAt?: string | null;
+  bookingNumber?: string | null;
+  riderPhone?: string | null;
+  user?: { phone: string | null } | null;
+  passengers?: number | null;
+  pickupInstructions?: string | null;
+  stops?: unknown;
+};
+
+export type LocationPoint = { lat: number; lng: number; timestamp: number };

@@ -33,7 +33,8 @@ export function connectSocket(token: string | null): MovoSocket {
   return {
     socket,
     join(opts = {}) {
-      joins.push(opts);
+      const key = JSON.stringify(opts);
+      if (!joins.some((j) => JSON.stringify(j) === key)) joins.push(opts);
       if (socket.connected) socket.emit("join", opts);
     },
     leaveBooking(bookingId) {
