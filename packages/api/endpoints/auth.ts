@@ -7,3 +7,8 @@ export const driverLogin = (email: string, password: string) =>
 export const me = () => request<MeResponse>("/api/auth/me");
 
 export const logout = () => request<{ ok?: boolean }>("/api/auth/logout", { method: "POST" });
+
+/* Always succeeds (the server doesn't reveal whether the email exists).
+   The reset link opens the web reset page. */
+export const driverForgotPassword = (email: string) =>
+  request<{ success: true }>("/api/auth/driver/forgot-password", { body: { email } });

@@ -1,7 +1,8 @@
 import { useEffect } from "react";
+import { AppState } from "react-native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, focusManager } from "@tanstack/react-query";
 import { useFonts, Inter_600SemiBold, Inter_700Bold } from "@expo-google-fonts/inter";
 import { DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold } from "@expo-google-fonts/dm-sans";
 import { colors } from "@movo/ui";
@@ -14,15 +15,42 @@ const queryClient = new QueryClient({
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({ Inter_600SemiBold, Inter_700Bold, DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold });
   const ready = useSession((s) => s.ready);
+  const driver = useSession((s) => s.driver);
 
   useEffect(() => { useSession.getState().restore(); }, []);
 
+  /* Coming back to the app: re-check the account (approved / suspended) and
+     let React Query refetch, since sockets can miss events while asleep */
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      const active = state === "active";
+      focusManager.setFocused(active);
+      if (active) useSession.getState().refresh();
+    });
+    return () => sub.remove();
+  }, []);
+
   if (!fontsLoaded || !ready) return null;
+
+  const signedIn = !!driver;
+  const active = driver?.status === "ACTIVE";
 
   return (
     <QueryClientProvider client={queryClient}>
       <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+        <Stack.Protected guard={!signedIn} redirectTo="/">
+          <Stack.Screen name="(auth)" />
+        </Stack.Protected>
+        {/* Signed in but not approved / suspended: only the status screen */}
+        <Stack.Protected guard={signedIn && !active} redirectTo={signedIn ? "/" : "/sign-in"}>
+          <Stack.Screen name="account-status" />
+        </Stack.Protected>
+        <Stack.Protected guard={active} redirectTo={signedIn ? "/account-status" : "/sign-in"}>
+          <Stack.Screen name="(app)" />
+          <Stack.Screen name="banking" options={{ presentation: "modal" }} />
+        </Stack.Protected>
+      </Stack>
     </QueryClientProvider>
   );
 }

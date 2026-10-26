@@ -14,7 +14,7 @@ export default function Banking() {
       <MovoText>
         {connect === "success" ? "Bank account linking finished." : "Bank linking was not completed. Please try again."}
       </MovoText>
-      <Button title="Back" variant="secondary" onPress={() => router.replace("/")} />
+      <Button title="Back" variant="secondary" onPress={() => router.back()} />
     </SafeAreaView>
   );
 }

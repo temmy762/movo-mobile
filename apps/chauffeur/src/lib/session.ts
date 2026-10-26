@@ -5,7 +5,7 @@
  */
 import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
-import { auth, configureApi } from "@movo/api";
+import { ApiError, auth, configureApi } from "@movo/api";
 import type { ApiDriver } from "@movo/shared";
 
 const TOKEN_KEY = "movo_session";
@@ -17,8 +17,12 @@ type SessionState = {
   token: string | null;
   driver: ApiDriver | null;
   restore: () => Promise<void>;
+  /** Re-reads the chauffeur (status can change: approved, suspended, removed) */
+  refresh: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  /** Drops the session locally (after account deletion — the server already ended it) */
+  clear: () => Promise<void>;
 };
 
 export const useSession = create<SessionState>((set, get) => ({
@@ -30,16 +34,19 @@ export const useSession = create<SessionState>((set, get) => ({
     const token = await SecureStore.getItemAsync(TOKEN_KEY);
     if (!token) return set({ ready: true });
     set({ token });
+    await get().refresh();
+    set({ ready: true });
+  },
+
+  async refresh() {
+    if (!get().token) return;
     try {
       const me = await auth.me();
-      if (me.role !== "DRIVER") {
-        await get().signOut();
-        return set({ ready: true });
-      }
-      set({ driver: me.driver, ready: true });
+      if (me.role !== "DRIVER") return get().clear();
+      set({ driver: me.driver });
     } catch {
-      /* Offline: keep the token and retry later. A 401 already signed out. */
-      set({ ready: true });
+      /* Offline: keep what we have and retry on the next foreground.
+         A 401 has already signed out via onUnauthorized. */
     }
   },
 
@@ -51,10 +58,26 @@ export const useSession = create<SessionState>((set, get) => ({
 
   async signOut() {
     if (get().token) await auth.logout().catch(() => {});
+    await get().clear();
+  },
+
+  async clear() {
     await SecureStore.deleteItemAsync(TOKEN_KEY);
     set({ token: null, driver: null });
   },
 }));
+
+/* Same wording as the web login page */
+export function signInErrorMessage(e: unknown): string {
+  if (!(e instanceof ApiError)) return "Login failed. Please try again.";
+  switch (e.status) {
+    case 0: return e.message;
+    case 401: return "Invalid email or password. Please check and try again.";
+    case 403: return e.message || "Your account has been deactivated. Please contact support.";
+    case 500: return "Server error. Please try again in a few moments.";
+    default: return e.message || "Login failed. Please try again.";
+  }
+}
 
 configureApi({
   baseUrl: API_URL,

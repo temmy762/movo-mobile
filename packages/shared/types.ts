@@ -31,3 +31,15 @@ export type AppConfig = {
   timeZone: string;
   currency: string;
 };
+
+/** GET /api/driver/onboarding/status */
+export type OnboardingStatus = {
+  adminStatus: "NOT_SUBMITTED" | "PENDING" | "UNDER_REVIEW" | "APPROVED" | "REJECTED" | string;
+  adminNote?: string | null;
+  type?: "INDIVIDUAL" | "FLEET" | null;
+  submittedAt?: string | null;
+  reviewedAt?: string | null;
+  driverId: string;
+  tier: string | null;
+  driverStatus: DriverStatus | null;
+};
