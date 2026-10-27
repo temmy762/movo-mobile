@@ -42,8 +42,11 @@ export function useRideRequests({ online, onAccepted }: {
   useEffect(() => { phaseRef.current = phase; }, [phase]);
 
   /* A ride already in progress (app restarted mid-trip) */
-  const restoreActive = useCallback(async () => {
-    const { booking: active } = await driverApi.activeBooking().catch(() => ({ booking: null }));
+  const loadActive = useCallback(
+    () => driverApi.activeBooking().then((r) => r.booking).catch(() => null),
+    [],
+  );
+  const applyActive = useCallback((active: DriverBooking | null) => {
     if (active) {
       setBooking(active);
       setPhase("accepted");
@@ -51,23 +54,25 @@ export function useRideRequests({ online, onAccepted }: {
     }
     return !!active;
   }, [onAccepted]);
+  const restoreActive = useCallback(() => loadActive().then(applyActive), [loadActive, applyActive]);
 
-  useEffect(() => { restoreActive(); }, [restoreActive]);
+  useEffect(() => { loadActive().then(applyActive); }, [loadActive, applyActive]);
 
-  const checkPool = useCallback(async () => {
-    if (phaseRef.current !== "searching") return;
-    try {
-      const pool = await driverApi.pendingBookings();
-      const next = pool.find((b) => !declined.current.has(b.id));
-      /* Re-check: an accept may have landed while this request was in flight */
-      if (next && phaseRef.current === "searching") {
-        setBooking(next);
-        setPhase("requesting");
-      }
-    } catch {
-      /* network hiccup — the next poll retries */
+  const offer = useCallback((next: DriverBooking | undefined) => {
+    /* Re-check: an accept may have landed while the pool request was in flight */
+    if (next && phaseRef.current === "searching") {
+      setTimeLeft(OFFER_SECONDS);
+      setBooking(next);
+      setPhase("requesting");
     }
   }, []);
+
+  const checkPool = useCallback(() => {
+    if (phaseRef.current !== "searching") return;
+    driverApi.pendingBookings()
+      .then((pool) => offer(pool.find((b) => !declined.current.has(b.id))))
+      .catch(() => { /* network hiccup — the next poll retries */ });
+  }, [offer]);
 
   /* Online ⇄ searching */
   useEffect(() => {
@@ -113,7 +118,6 @@ export function useRideRequests({ online, onAccepted }: {
   /* 30 s offer: countdown + repeating vibration until answered */
   useEffect(() => {
     if (phase !== "requesting" || !booking) return;
-    setTimeLeft(OFFER_SECONDS);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
     Vibration.vibrate([0, 600, 400], true);
     const started = Date.now();
@@ -161,8 +165,11 @@ export function useRideRequests({ online, onAccepted }: {
     backToSearching();
   }, [booking, backToSearching]);
 
-  /** The held ride ended (completed / handed back) */
-  const finishActive = useCallback(() => backToSearching(), [backToSearching]);
+  /** The held ride ended. A ride handed back goes to the pool again — never re-offer it here. */
+  const finishActive = useCallback((handedBack?: boolean) => {
+    if (handedBack && booking) declined.current.add(booking.id);
+    backToSearching();
+  }, [booking, backToSearching]);
 
   return {
     phase, booking, timeLeft, acting, notice,

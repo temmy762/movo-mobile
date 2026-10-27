@@ -4,6 +4,9 @@
  * foreground service / iOS background location). A ping marks the chauffeur
  * online on the server, so nothing is sent once they go offline.
  *
+ * During a trip (after "Start Ride") the newest point also goes to the ride,
+ * which relays it to the rider's live map, and updates come more often.
+ *
  * The task is defined at module scope and this file is imported from the app
  * entry (index.ts), so it exists when the OS wakes the app in the background.
  */
@@ -16,6 +19,7 @@ import "./session"; // configures the API client (base URL + token)
 
 const TASK = "movo-shift-location";
 export const ONLINE_KEY = "movo_online";
+const TRIP_KEY = "movo_trip";
 
 TaskManager.defineTask<{ locations: Location.LocationObject[] }>(TASK, async ({ data, error }) => {
   if (error || !data?.locations?.length) return;
@@ -38,9 +42,60 @@ TaskManager.defineTask<{ locations: Location.LocationObject[] }>(TASK, async ({ 
     if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
       await SecureStore.setItemAsync(ONLINE_KEY, "false");
       await stopShiftLocation();
+      return;
     }
   }
+
+  const tripId = await SecureStore.getItemAsync(TRIP_KEY);
+  if (tripId) {
+    const { coords } = data.locations[data.locations.length - 1];
+    await driverApi.tripLocation(tripId, {
+      lat: coords.latitude,
+      lng: coords.longitude,
+      heading: coords.heading != null && coords.heading >= 0 ? coords.heading : undefined,
+      speed: coords.speed != null && coords.speed >= 0 ? coords.speed : undefined,
+    }).catch(async (e) => {
+      /* The ride ended (completed / cancelled) — stop sending to it */
+      if (e instanceof ApiError && (e.status === 409 || e.status === 403 || e.status === 404)) {
+        await SecureStore.deleteItemAsync(TRIP_KEY);
+      }
+    });
+  }
 });
+
+/* Every 15 s / 50 m on shift; every 5 s / 10 m on a trip (the web's rate) */
+function trackingOptions(onTrip: boolean): Location.LocationTaskOptions {
+  return {
+    accuracy: onTrip ? Location.Accuracy.BestForNavigation : Location.Accuracy.High,
+    timeInterval: onTrip ? 5_000 : 15_000,
+    distanceInterval: onTrip ? 10 : 50,
+    deferredUpdatesInterval: onTrip ? 5_000 : 15_000,
+    pausesUpdatesAutomatically: false,
+    activityType: Location.ActivityType.AutomotiveNavigation,
+    showsBackgroundLocationIndicator: true,
+    foregroundService: {
+      notificationTitle: onTrip ? "Trip in progress" : "You're online",
+      notificationBody: onTrip
+        ? "Movo is sharing your location with your rider."
+        : "Movo is sharing your location so you receive nearby ride requests.",
+      notificationColor: "#131936",
+      killServiceOnDestroy: false,
+    },
+  };
+}
+
+/**
+ * Start (bookingId) or stop (null) relaying location to a trip. The running
+ * task is restarted so the trip / shift update rate applies on both platforms.
+ */
+export async function setTripTracking(bookingId: string | null): Promise<void> {
+  if (bookingId) await SecureStore.setItemAsync(TRIP_KEY, bookingId);
+  else await SecureStore.deleteItemAsync(TRIP_KEY);
+  if (await Location.hasStartedLocationUpdatesAsync(TASK).catch(() => false)) {
+    await Location.stopLocationUpdatesAsync(TASK).catch(() => {});
+    await Location.startLocationUpdatesAsync(TASK, trackingOptions(!!bookingId)).catch(() => {});
+  }
+}
 
 export type LocationAccess = "always" | "foreground" | "denied";
 
@@ -54,21 +109,8 @@ export async function startShiftLocation(): Promise<LocationAccess> {
   const bg = await Location.requestBackgroundPermissionsAsync().catch(() => null);
 
   if (!(await Location.hasStartedLocationUpdatesAsync(TASK).catch(() => false))) {
-    await Location.startLocationUpdatesAsync(TASK, {
-      accuracy: Location.Accuracy.High,
-      timeInterval: 15_000,
-      distanceInterval: 50,
-      deferredUpdatesInterval: 15_000,
-      pausesUpdatesAutomatically: false,
-      activityType: Location.ActivityType.AutomotiveNavigation,
-      showsBackgroundLocationIndicator: true,
-      foregroundService: {
-        notificationTitle: "You're online",
-        notificationBody: "Movo is sharing your location so you receive nearby ride requests.",
-        notificationColor: "#131936",
-        killServiceOnDestroy: false,
-      },
-    });
+    const onTrip = !!(await SecureStore.getItemAsync(TRIP_KEY));
+    await Location.startLocationUpdatesAsync(TASK, trackingOptions(onTrip));
   }
 
   /* Send a first fix right away so the server has a fresh position */

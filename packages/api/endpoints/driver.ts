@@ -30,3 +30,31 @@ export const acceptBooking = (id: string) =>
 /* Releases a ride pre-assigned to this chauffeur back to the pool */
 export const declineBooking = (id: string) =>
   request<{ ok: true; released: boolean }>(`/api/bookings/${id}/decline`, { method: "PATCH" });
+
+/* ── Trip controls (standard rides) ── */
+
+export type ArrivedResponse = { ok: true; arrivedAt: string; freeWaitingMinutes: number; waitingRatePerMin: number };
+
+/* Idempotent: the first arrival time is the waiting-charge anchor. 409 once started. */
+export const arrived = (id: string) => request<ArrivedResponse>(`/api/bookings/${id}/arrived`, { method: "PATCH" });
+
+/* 409 = already started (e.g. a double tap) */
+export const startTrip = (id: string) =>
+  request<{ ok: true; startedAt: string }>(`/api/bookings/${id}/start`, { method: "PATCH" });
+
+/* 409 "already completed" on a retry after a dropped response */
+export const completeTrip = (id: string) =>
+  request<unknown>(`/api/bookings/${id}/status`, { method: "PATCH", body: { status: "COMPLETED" } });
+
+/* Before the trip starts only. Releases the ride to another chauffeur —
+   the rider is not told it was cancelled, and is not refunded. */
+export const driverCancel = (id: string, reason?: string) =>
+  request<{ ok: true }>(`/api/bookings/${id}/driver-cancel`, { method: "PATCH", body: { reason: reason || undefined } });
+
+/* Feedback is required for 3 stars or lower */
+export const rateRider = (id: string, rating: number, feedback: string | null) =>
+  request<unknown>(`/api/bookings/${id}/rating`, { body: { rating, feedback } });
+
+/* On a trip: persisted and relayed live to the rider's map. 409 once the ride ended. */
+export const tripLocation = (id: string, p: { lat: number; lng: number; heading?: number; speed?: number }) =>
+  request<{ ok: true }>(`/api/bookings/${id}/driver-location`, { body: p });
