@@ -12,13 +12,11 @@ import { ApiError, app as appApi, driver as driverApi } from "@movo/api";
 import { SOCKET_EVENTS, type DriverBooking } from "@movo/shared";
 import { setTripTracking } from "./location";
 import { useSocket } from "./socket";
+import { STANDARD_WAITING, useWaitingClock, type WaitInfo } from "./waiting";
 
 export type TripStep = "accepted" | "arrived" | "started" | "completed";
 
-type WaitInfo = { arrivedAt: number; freeMin: number; rate: number };
-
-const DEFAULT_FREE_MIN = 5;
-const DEFAULT_RATE = 0.75;
+const { freeMin: DEFAULT_FREE_MIN, rate: DEFAULT_RATE } = STANDARD_WAITING;
 
 export function stopsOf(stops: unknown): string[] {
   return Array.isArray(stops) ? stops.filter((s): s is string => typeof s === "string" && !!s) : [];
@@ -30,7 +28,6 @@ export function useTrip(booking: DriverBooking) {
     booking.startedAt ? "started" : booking.arrivedAt ? "arrived" : "accepted",
   );
   const [wait, setWait] = useState<WaitInfo | null>(null);
-  const [now, setNow] = useState(() => Date.now());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   /* The rider can change the destination / stops mid-trip */
@@ -50,12 +47,7 @@ export function useTrip(booking: DriverBooking) {
       .catch(() => setWait({ arrivedAt, freeMin: DEFAULT_FREE_MIN, rate: DEFAULT_RATE }));
   }, [booking.arrivedAt, booking.startedAt]);
 
-  /* Waiting clock ticks while at pickup */
-  useEffect(() => {
-    if (step !== "arrived" || !wait) return;
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, [step, wait]);
+  const waiting = useWaitingClock(wait, step === "arrived");
 
   /* Location goes to the rider only while the trip is under way */
   useEffect(() => {
@@ -92,7 +84,6 @@ export function useTrip(booking: DriverBooking) {
       freeMin: d.freeWaitingMinutes ?? DEFAULT_FREE_MIN,
       rate: d.waitingRatePerMin ?? DEFAULT_RATE,
     });
-    setNow(Date.now());
     setStep("arrived");
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   }, "Couldn't update the ride — check your connection and try again.");
@@ -131,14 +122,6 @@ export function useTrip(booking: DriverBooking) {
   /* Best effort — the trip is already complete */
   const rate = (rating: number, feedback: string) =>
     driverApi.rateRider(booking.id, rating, feedback.trim() || null).catch(() => {});
-
-  /* Waiting clock: free window countdown, then the accruing charge */
-  let waiting: { freeLeft: number; accrued: number; rate: number } | null = null;
-  if (wait && step === "arrived") {
-    const elapsed = Math.max(0, Math.floor((now - wait.arrivedAt) / 1000));
-    const billableMin = Math.max(0, Math.floor(elapsed / 60) - wait.freeMin);
-    waiting = { freeLeft: Math.max(0, wait.freeMin * 60 - elapsed), accrued: billableMin * wait.rate, rate: wait.rate };
-  }
 
   return {
     step, busy, error, route, routeNotice, waiting,

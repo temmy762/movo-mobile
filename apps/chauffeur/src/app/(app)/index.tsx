@@ -1,10 +1,11 @@
 /**
  * Chauffeur home — mirrors movo-web app/driver/home: online toggle, ride
  * requests (offer card with earnings + 30 s countdown), the active trip
- * (components/TripCard.tsx) and today's stats.
+ * (components/TripCard.tsx), Safe Ride (components/SafeRideCard.tsx) and
+ * today's stats.
  * Location is shared while online (foreground + background, lib/location.ts).
  */
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -19,6 +20,8 @@ import { useSocket } from "@/lib/socket";
 import { isReservation, useRideRequests } from "@/lib/useRideRequests";
 import { Route, dark, gradient, kit, money } from "@/components/homeKit";
 import { TripCard } from "@/components/TripCard";
+import { SafeRideCard, SafeRideOffer } from "@/components/SafeRideCard";
+import { useSafeRide } from "@/lib/useSafeRide";
 
 function greeting(): string {
   const hour = Number(winnipegNowTime().slice(0, 2));
@@ -46,7 +49,20 @@ export default function Home() {
     queryClient.invalidateQueries({ queryKey: ["driver-stats"] });
   }, [queryClient]);
 
-  const requests = useRideRequests({ online: shift.online, onAccepted });
+  /* Safe Ride offers only while online and not on a standard ride; a Safe
+     Ride (offer or job) pauses standard requests */
+  const onStandardRide = useRef(false);
+  const canOfferSafeRide = useCallback(() => useShift.getState().online && !onStandardRide.current, []);
+  const safe = useSafeRide({ canOffer: canOfferSafeRide, onAccepted });
+  const requests = useRideRequests({ online: shift.online && safe.phase === "idle", onAccepted });
+  useEffect(() => { onStandardRide.current = requests.phase === "accepted"; }, [requests.phase]);
+
+  /* Earnings are credited when a Safe Ride part ends */
+  useEffect(() => {
+    if (safe.phase === "idle" || safe.phase === "awaiting_return") {
+      queryClient.invalidateQueries({ queryKey: ["driver-stats"] });
+    }
+  }, [safe.phase, queryClient]);
 
   useEffect(() => { shift.restore(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -63,7 +79,8 @@ export default function Home() {
   }, [requests.finishActive, queryClient]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const toggle = () => (shift.online ? shift.goOffline() : shift.goOnline());
-  const notice = shift.error ?? requests.notice;
+  const notice = shift.error ?? safe.notice ?? requests.notice;
+  const onAJob = requests.phase === "accepted" || (safe.phase !== "idle" && safe.phase !== "requesting");
 
   return (
     <View style={{ flex: 1, backgroundColor: dark.bg }}>
@@ -77,7 +94,7 @@ export default function Home() {
               {shift.online ? "You're online" : "You're offline"}
             </Text>
           </View>
-          <Pressable onPress={toggle} disabled={shift.busy || requests.phase === "accepted"} accessibilityRole="switch"
+          <Pressable onPress={toggle} disabled={shift.busy || onAJob} accessibilityRole="switch"
             accessibilityState={{ checked: shift.online }} style={{ opacity: shift.busy ? 0.6 : 1 }}>
             {shift.online ? (
               <LinearGradient colors={["#131936", "#C6BFB2"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.pill}>
@@ -93,7 +110,7 @@ export default function Home() {
 
         <ScrollView contentContainerStyle={styles.page}>
           {notice && (
-            <Pressable onPress={() => { shift.clearError(); requests.clearNotice(); }} style={styles.notice}>
+            <Pressable onPress={() => { shift.clearError(); safe.clearNotice(); requests.clearNotice(); }} style={styles.notice}>
               <Icon name="alert" size={16} color={colors.taupe} />
               <Text style={styles.noticeText}>{notice}</Text>
             </Pressable>
@@ -110,7 +127,11 @@ export default function Home() {
           )}
 
           {/* Ride requests */}
-          {requests.phase === "requesting" && requests.booking ? (
+          {safe.phase === "requesting" && safe.assignment ? (
+            <SafeRideOffer safe={safe} />
+          ) : safe.phase !== "idle" && safe.assignment ? (
+            <SafeRideCard safe={safe} />
+          ) : requests.phase === "requesting" && requests.booking ? (
             <OfferCard booking={requests.booking} timeLeft={requests.timeLeft} acting={requests.acting}
               onAccept={requests.accept} onDecline={requests.decline} />
           ) : requests.phase === "accepted" && requests.booking ? (

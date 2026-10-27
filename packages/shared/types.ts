@@ -1,6 +1,6 @@
 /* Hand-written API response shapes (mirroring the movo-web routes).
    Add a type here when an endpoint is wired up in packages/api. */
-import type { DriverStatus, Role } from "./enums";
+import type { CareAssignmentStatus, CareRole, DriverStatus, Role } from "./enums";
 
 export type ApiDriver = {
   id: string;
@@ -80,3 +80,52 @@ export type DriverBooking = {
 };
 
 export type LocationPoint = { lat: number; lng: number; timestamp: number };
+
+/* ── Safe Ride (Care) — GET /api/care/driver ── */
+
+/* Status AWAITING_RETURN: PRIMARY delivered the customer and waits to be
+   driven back to their own car (by SUPPORT, or an Uber booked by Dispatch) */
+export type CareAssignment = {
+  id: string;
+  role: CareRole;
+  status: CareAssignmentStatus;
+  arrivedAt?: string | null;
+  booking: {
+    id: string;
+    bookingNumber?: string | null;
+    clientName: string;
+    pickup: string;
+    dropoff: string;
+    carName: string;
+    total: number;
+    paymentStatus: string;
+    status: string;
+    /* "UBER" = Dispatch books PRIMARY an Uber back to their vehicle */
+    returnMode?: string | null;
+    uberReturnRef?: string | null;
+    uberReturnBookedAt?: string | null;
+    scheduledAt?: string | null;
+    enRouteAt?: string | null;
+    riderPhone?: string | null;
+    user?: { phone: string | null } | null;
+    passengers?: number | null;
+    pickupInstructions?: string | null;
+    stops?: unknown;
+  };
+};
+
+export type CoDriver = {
+  id: string;
+  role: CareRole;
+  status: CareAssignmentStatus;
+  driver: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+    photoUrl: string | null;
+    vehicle: { make: string | null; model: string | null; plate: string | null } | null;
+  };
+};
+
+export type CareDriverResponse = { assignment: CareAssignment | null; coDriver: CoDriver | null; earning: number };
