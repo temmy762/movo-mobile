@@ -8,14 +8,14 @@
  * Home screen already shows (and rings for) requests, so those aren't shown
  * twice.
  *
- * Not available in Expo Go (no remote push on Android since SDK 53) or before
- * the app has an EAS project id — registration is skipped, nothing breaks.
+ * Not available in Expo Go (no remote push on Android since SDK 53, and its
+ * native notifications module is older than this library) or before the app
+ * has an EAS project id. The library is only loaded outside Expo Go —
+ * importing it there crashes the app at startup.
  */
 import { Platform } from "react-native";
 import Constants, { ExecutionEnvironment } from "expo-constants";
 import * as Device from "expo-device";
-import * as Notifications from "expo-notifications";
-import { AndroidImportance, AndroidNotificationVisibility } from "expo-notifications";
 import * as SecureStore from "expo-secure-store";
 import { push as pushApi } from "@movo/api";
 import { useShift } from "./shift";
@@ -27,7 +27,13 @@ const REQUEST_TYPES = new Set(["new_booking", "care_primary", "care_support"]);
 export const isRequestPush = (data: unknown) =>
   REQUEST_TYPES.has(String((data as { type?: unknown } | null)?.type ?? ""));
 
-Notifications.setNotificationHandler({
+const inExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+const Notifications: typeof import("expo-notifications") | null = inExpoGo
+  ? null
+  : require("expo-notifications"); // eslint-disable-line @typescript-eslint/no-require-imports
+
+Notifications?.setNotificationHandler({
   handleNotification: async (n) => {
     /* Online, Home already rings for requests; offline (a reservation sent
        to every chauffeur) the banner is the only way to hear about it */
@@ -41,14 +47,15 @@ Notifications.setNotificationHandler({
   },
 });
 
-async function ensureChannels() {
+async function ensureChannels(N: typeof import("expo-notifications")) {
   if (Platform.OS !== "android") return;
-  await Notifications.setNotificationChannelAsync("default", {
+  const { AndroidImportance, AndroidNotificationVisibility } = N;
+  await N.setNotificationChannelAsync("default", {
     name: "Ride updates",
     importance: AndroidImportance.HIGH,
     lightColor: "#C6BFB2",
   });
-  await Notifications.setNotificationChannelAsync(REQUEST_CHANNEL, {
+  await N.setNotificationChannelAsync(REQUEST_CHANNEL, {
     name: "Ride requests",
     description: "New ride and Safe Ride requests while you're online",
     importance: AndroidImportance.MAX,
@@ -65,22 +72,30 @@ function projectId(): string | undefined {
 
 /** Asks for permission (once) and registers this phone for the signed-in chauffeur */
 export async function registerForPush(): Promise<void> {
-  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient || !Device.isDevice) return;
+  const N = Notifications;
   const id = projectId();
-  if (!id) return;
+  if (!N || !Device.isDevice || !id) return;
 
   try {
-    await ensureChannels();
-    let { status } = await Notifications.getPermissionsAsync();
-    if (status !== "granted") ({ status } = await Notifications.requestPermissionsAsync());
+    await ensureChannels(N);
+    let { status } = await N.getPermissionsAsync();
+    if (status !== "granted") ({ status } = await N.requestPermissionsAsync());
     if (status !== "granted") return;
 
-    const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId: id });
+    const { data: token } = await N.getExpoPushTokenAsync({ projectId: id });
     await pushApi.registerDevice(token, Platform.OS === "ios" ? "ios" : "android", "chauffeur");
     await SecureStore.setItemAsync(PUSH_TOKEN_KEY, token);
   } catch (e) {
     console.warn("[push] registration failed", e);
   }
+}
+
+/** Calls `onTap` when the chauffeur taps an alert (including the one that launched the app) */
+export function onNotificationTap(onTap: () => void): () => void {
+  if (!Notifications) return () => {};
+  if (Notifications.getLastNotificationResponse()) onTap();
+  const sub = Notifications.addNotificationResponseReceivedListener(() => onTap());
+  return () => sub.remove();
 }
 
 /** Sign-out: this phone stops receiving the account's alerts */
