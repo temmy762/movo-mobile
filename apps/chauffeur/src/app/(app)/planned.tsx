@@ -7,6 +7,7 @@
  *  - Reserved rides: accepted, not yet set off for. "I'm heading to pickup"
  *    activates the ride (it becomes the active trip on Home) and tells the
  *    rider; "Can't make this reservation" hands it to another chauffeur.
+ *  - Past: completed rides with this chauffeur's earning (web My Rides).
  */
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -15,7 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, driver as driverApi } from "@movo/api";
-import type { DriverBooking, ReservedRide } from "@movo/shared";
+import type { DriverBooking, DriverRide, ReservedRide } from "@movo/shared";
 import { Card, Icon, colors, fonts } from "@movo/ui";
 import { useShift } from "@/lib/shift";
 import { HandBackModal, openNavigation } from "@/components/tripParts";
@@ -45,6 +46,40 @@ function Route({ pickup, dropoff }: { pickup: string; dropoff: string }) {
   );
 }
 
+/* "Today, 3:50 PM" / "Oct 14, 2026, 3:50 PM" */
+function pastWhen(iso: string) {
+  const d = new Date(iso);
+  const day = (x: Date) => x.toLocaleDateString("en-CA", { timeZone: "America/Winnipeg" });
+  const time = d.toLocaleTimeString("en-US", { timeZone: "America/Winnipeg", hour: "numeric", minute: "2-digit" });
+  const date = day(d) === day(new Date())
+    ? "Today"
+    : d.toLocaleDateString("en-US", { timeZone: "America/Winnipeg", month: "short", day: "numeric", year: "numeric" });
+  return `${date}, ${time}`;
+}
+
+function PastRide({ ride }: { ride: DriverRide }) {
+  const care = ride.bookingType === "CARE";
+  return (
+    <Card style={{ gap: 10 }}>
+      <View style={styles.between}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.client}>{ride.clientName}</Text>
+          <Text style={styles.meta}>
+            {care ? `Safe Ride${ride.careRole ? ` · ${ride.careRole === "PRIMARY" ? "Primary" : "Support"}` : ""}` : ride.carName}
+          </Text>
+          {ride.bookingNumber && <Text style={styles.small}>{ride.bookingNumber}</Text>}
+        </View>
+        <Text style={styles.earning}>{money(ride.earning)}</Text>
+      </View>
+      <Route pickup={ride.pickup} dropoff={ride.dropoff} />
+      <View style={styles.between}>
+        <Text style={styles.small}>Payment: {ride.paymentStatus === "PAID" ? "Paid" : "Unpaid"}</Text>
+        <Text style={styles.small}>{pastWhen(ride.createdAt)}</Text>
+      </View>
+    </Card>
+  );
+}
+
 function Primary({ title, onPress, disabled, muted }: { title: string; onPress: () => void; disabled?: boolean; muted?: boolean }) {
   return (
     <Pressable onPress={onPress} disabled={disabled} style={{ flex: 1, opacity: disabled ? 0.6 : 1 }} accessibilityRole="button">
@@ -61,6 +96,7 @@ function Primary({ title, onPress, disabled, muted }: { title: string; onPress: 
 
 export default function Planned() {
   const online = useShift((s) => s.online);
+  const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
   const queryClient = useQueryClient();
   const [notice, setNotice] = useState<string | null>(null);
   const [acting, setActing] = useState<string | null>(null);
@@ -70,6 +106,7 @@ export default function Planned() {
   const [cancelError, setCancelError] = useState<string | null>(null);
 
   const reserved = useQuery({ queryKey: ["reserved"], queryFn: driverApi.reserved });
+  const past = useQuery({ queryKey: ["past-rides"], queryFn: driverApi.pastRides, enabled: tab === "past" });
   const open = useQuery({
     queryKey: ["reservation-requests"],
     queryFn: driverApi.pendingBookings,
@@ -81,11 +118,16 @@ export default function Planned() {
   });
   /* Tabs stay mounted — re-read whenever this one is opened */
   const { refetch: refetchReserved } = reserved;
-  useFocusEffect(useCallback(() => { refetchReserved(); }, [refetchReserved]));
+  const { refetch: refetchPast } = past;
+  useFocusEffect(useCallback(() => {
+    if (tab === "past") refetchPast();
+    else refetchReserved();
+  }, [tab, refetchPast, refetchReserved]));
 
   const requests = online ? [] : (open.data ?? []).filter((b) => !declined.has(b.id));
 
   const refresh = () => {
+    if (tab === "past") return void past.refetch();
     reserved.refetch();
     if (!online) open.refetch();
   };
@@ -141,8 +183,32 @@ export default function Planned() {
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.page}
-        refreshControl={<RefreshControl refreshing={reserved.isRefetching} onRefresh={refresh} />}>
-        <Text style={styles.title}>Reserved Rides</Text>
+        refreshControl={<RefreshControl refreshing={tab === "past" ? past.isRefetching : reserved.isRefetching} onRefresh={refresh} />}>
+        <Text style={styles.title}>My Rides</Text>
+
+        <View style={styles.segments}>
+          {(["upcoming", "past"] as const).map((t) => (
+            <Pressable key={t} onPress={() => setTab(t)} style={[styles.segment, tab === t && styles.segmentOn]}
+              accessibilityRole="tab" accessibilityState={{ selected: tab === t }}>
+              <Text style={[styles.segmentText, tab === t && { color: "#fff" }]}>{t === "upcoming" ? "Upcoming" : "Past"}</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {tab === "past" ? (
+          past.isPending ? (
+            <ActivityIndicator style={{ marginTop: 32 }} color={colors.navy} />
+          ) : past.isError ? (
+            <Text style={[styles.meta, { textAlign: "center", marginTop: 24 }]}>Couldn&apos;t load your rides. Pull down to try again.</Text>
+          ) : !past.data.length ? (
+            <View style={styles.empty}>
+              <Text style={styles.emptyTitle}>No completed rides yet</Text>
+              <Text style={styles.meta}>Rides you complete will appear here.</Text>
+            </View>
+          ) : (
+            past.data.map((r) => <PastRide key={r.id} ride={r} />)
+          )
+        ) : (<>
 
         {notice && (
           <Pressable onPress={() => setNotice(null)} style={styles.notice}>
@@ -215,6 +281,7 @@ export default function Planned() {
             );
           })
         )}
+        </>)}
       </ScrollView>
 
       <HandBackModal visible={!!cancelTarget} title="Cancel this reservation?" keepLabel="Keep Reservation"
@@ -230,6 +297,11 @@ export default function Planned() {
 const styles = StyleSheet.create({
   page: { padding: 20, gap: 14, paddingBottom: 40 },
   title: { fontFamily: fonts.heading, fontSize: 20, color: "#111827" },
+  segments: { flexDirection: "row", backgroundColor: "#eef0f4", borderRadius: 12, padding: 4 },
+  segment: { flex: 1, paddingVertical: 9, borderRadius: 9, alignItems: "center" },
+  segmentOn: { backgroundColor: colors.navy },
+  segmentText: { fontFamily: fonts.bodySemi, fontSize: 13, color: "#6b7280" },
+  client: { fontFamily: fonts.bodySemi, fontSize: 14, color: "#111827" },
   section: { fontFamily: fonts.bodySemi, fontSize: 13, color: "#374151" },
   notice: { flexDirection: "row", gap: 8, padding: 12, borderRadius: 14, backgroundColor: "rgba(19,25,54,0.06)" },
   noticeText: { flex: 1, fontFamily: fonts.body, fontSize: 12, color: colors.navy, lineHeight: 17 },

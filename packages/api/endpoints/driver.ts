@@ -1,4 +1,6 @@
-import type { BookingMessage, DriverBooking, DriverStats, LocationPoint, OnboardingStatus, ReservedRide } from "@movo/shared";
+import type {
+  BookingMessage, DriverBooking, DriverRide, DriverStats, LocationPoint, OnboardingStatus, ReservedRide, Wallet,
+} from "@movo/shared";
 import { request } from "../client";
 
 export const onboardingStatus = () => request<OnboardingStatus>("/api/driver/onboarding/status");
@@ -74,3 +76,14 @@ export const reserved = () => request<ReservedRide[]>("/api/driver/reserved");
    ride) and only now tells the rider their chauffeur is on the way */
 export const enRoute = (id: string) =>
   request<{ ok: true; enRouteAt: string }>(`/api/bookings/${id}/en-route`, { method: "PATCH" });
+
+/* ── History + wallet ── */
+
+export const pastRides = () => request<DriverRide[]>("/api/driver/rides?tab=past");
+
+export const wallet = () => request<Wallet>("/api/driver/wallet");
+
+/* With an active Stripe Connect account the transfer is sent now (automated:
+   true); otherwise Movo processes the request manually */
+export const requestPayout = (amount: number) =>
+  request<{ automated?: boolean }>("/api/driver/wallet/payout", { body: { amount } });

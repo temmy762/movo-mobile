@@ -150,3 +150,44 @@ export type ReservedRide = {
   scheduledAt: string | null;
   paymentStatus: string;
 };
+
+/* GET /api/driver/rides?tab=past — completed rides (standard + Safe Ride), with this chauffeur's earning */
+export type DriverRide = {
+  id: string;
+  clientName: string;
+  carName: string;
+  pickup: string;
+  dropoff: string;
+  status: string;
+  paymentStatus: string;
+  createdAt: string;
+  scheduledAt?: string | null;
+  bookingNumber?: string | null;
+  bookingType?: string;
+  careRole?: "PRIMARY" | "SUPPORT" | null;
+  earning?: number;
+};
+
+/* GET /api/driver/wallet. Earnings settle 48 h after the trip; pending payout
+   requests are already deducted from availableBalance. */
+export type WalletTransaction = {
+  id: string;
+  kind: "EARNING" | "PAYOUT" | "TOPUP";
+  reference: string | null;
+  label: string;
+  date: string;
+  amount: number;
+  type: "in" | "out";
+  /* PENDING_SETTLEMENT (earning < 48 h) | PENDING (payout processing) | COMPLETED | FAILED */
+  status: string;
+  settlesAt: string | null;
+};
+
+export type Wallet = {
+  availableBalance: number;
+  totalEarned: number;
+  pendingEarnings: number;
+  pendingPayouts: number;
+  settlementHours: number;
+  transactions: WalletTransaction[];
+};

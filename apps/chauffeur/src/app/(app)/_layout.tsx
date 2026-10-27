@@ -26,6 +26,7 @@ export default function AppTabs() {
       >
         <Tabs.Screen name="index" options={{ title: "Home", tabBarIcon: ({ color }) => <Icon name="home" color={color} /> }} />
         <Tabs.Screen name="planned" options={{ title: "Rides", tabBarIcon: ({ color }) => <Icon name="clock" color={color} /> }} />
+        <Tabs.Screen name="wallet" options={{ title: "Wallet", tabBarIcon: ({ color }) => <Icon name="wallet" color={color} /> }} />
         <Tabs.Screen name="profile" options={{ title: "Profile", tabBarIcon: ({ color }) => <Icon name="user" color={color} /> }} />
     </Tabs>
   );
