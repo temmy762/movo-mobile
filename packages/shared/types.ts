@@ -191,3 +191,19 @@ export type Wallet = {
   settlementHours: number;
   transactions: WalletTransaction[];
 };
+
+/* GET /api/driver/stripe-connect — "active" once the account can receive transfers */
+export type StripeConnectStatus = {
+  connected: boolean;
+  status: "active" | "pending" | null;
+  detailsSubmitted?: boolean;
+  payoutsEnabled?: boolean;
+};
+
+/* GET /api/driver/profile/banking — numbers come back masked (••••1234) */
+export type BankingDetails = {
+  bankAccountName: string | null;
+  bankInstitution: string | null;
+  bankAccountNumber: string | null;
+  bankRoutingNumber: string | null;
+};

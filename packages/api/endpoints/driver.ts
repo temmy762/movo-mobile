@@ -1,5 +1,6 @@
 import type {
-  BookingMessage, DriverBooking, DriverRide, DriverStats, LocationPoint, OnboardingStatus, ReservedRide, Wallet,
+  BankingDetails, BookingMessage, DriverBooking, DriverRide, DriverStats, LocationPoint, OnboardingStatus, ReservedRide,
+  StripeConnectStatus, Wallet,
 } from "@movo/shared";
 import { request } from "../client";
 
@@ -87,3 +88,17 @@ export const wallet = () => request<Wallet>("/api/driver/wallet");
    true); otherwise Movo processes the request manually */
 export const requestPayout = (amount: number) =>
   request<{ automated?: boolean }>("/api/driver/wallet/payout", { body: { amount } });
+
+/* ── Banking ── */
+
+export const stripeConnectStatus = () => request<StripeConnectStatus>("/api/driver/stripe-connect");
+
+/* Stripe-hosted onboarding link. Mobile requests return through movo-web
+   /app-return to movochauffeur://banking?connect=success|refresh */
+export const startStripeConnect = () => request<{ url: string }>("/api/driver/stripe-connect", { method: "POST" });
+
+export const bankingDetails = () => request<{ banking: BankingDetails | null }>("/api/driver/profile/banking");
+
+/* Only the fields sent are changed */
+export const updateBankingDetails = (fields: Partial<Record<keyof BankingDetails, string>>) =>
+  request<{ success: true }>("/api/driver/profile/banking", { method: "PATCH", body: fields });

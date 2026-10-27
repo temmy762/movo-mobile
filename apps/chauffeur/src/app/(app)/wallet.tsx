@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { ApiError, driver as driverApi } from "@movo/api";
 import type { WalletTransaction } from "@movo/shared";
@@ -144,6 +144,9 @@ export default function WalletScreen() {
         <Text style={styles.hint}>
           Funds become available after processing{wallet.data?.settlementHours ? ` (${wallet.data.settlementHours} hours after each trip)` : ""}.
         </Text>
+        <Pressable onPress={() => router.push("/banking")} hitSlop={6} style={{ alignSelf: "flex-start" }}>
+          <Text style={styles.bankLink}>Bank account &amp; automatic payouts ›</Text>
+        </Pressable>
 
         <Text style={styles.section}>Recent Transactions</Text>
         {wallet.isError ? (
@@ -199,6 +202,7 @@ const styles = StyleSheet.create({
   noticeText: { flex: 1, fontFamily: fonts.bodySemi, fontSize: 12, color: "#15803d" },
   withdraw: { flexDirection: "row", gap: 10, alignItems: "center", justifyContent: "center", paddingVertical: 16, borderRadius: 18 },
   withdrawText: { fontFamily: fonts.bodySemi, fontSize: 16 },
+  bankLink: { fontFamily: fonts.bodySemi, fontSize: 13, color: colors.navy, paddingHorizontal: 4 },
   hint: { fontFamily: fonts.body, fontSize: 12, color: "#6b7280", paddingHorizontal: 4 },
   section: { fontFamily: fonts.heading, fontSize: 17, color: "#111827", marginTop: 10, paddingHorizontal: 4 },
   tx: { flexDirection: "row", alignItems: "center", gap: 14, backgroundColor: "#fff", borderRadius: 18, padding: 14 },

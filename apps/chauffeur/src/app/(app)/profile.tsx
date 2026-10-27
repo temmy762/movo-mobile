@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { router } from "expo-router";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ApiError, driver as driverApi } from "@movo/api";
@@ -56,6 +57,10 @@ export default function Profile() {
         <Card style={{ gap: 2 }}>
           <Text style={styles.name}>{driver?.firstName} {driver?.lastName}</Text>
           <Text style={styles.email}>{driver?.email}</Text>
+        </Card>
+
+        <Card style={styles.list}>
+          <Row icon="wallet" label="Banking details" onPress={() => router.push("/banking")} />
         </Card>
 
         <Card style={styles.list}>

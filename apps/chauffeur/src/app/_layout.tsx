@@ -52,7 +52,7 @@ export default function RootLayout() {
           <Stack.Protected guard={active} redirectTo={signedIn ? "/account-status" : "/sign-in"}>
             <Stack.Screen name="(app)" />
             <Stack.Screen name="chat/[bookingId]" />
-            <Stack.Screen name="banking" options={{ presentation: "modal" }} />
+            <Stack.Screen name="banking" />
           </Stack.Protected>
         </Stack>
       </SocketProvider>
