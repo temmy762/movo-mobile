@@ -7,6 +7,7 @@ import { useFonts, Inter_600SemiBold, Inter_700Bold } from "@expo-google-fonts/i
 import { DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold } from "@expo-google-fonts/dm-sans";
 import { colors } from "@movo/ui";
 import { useSession } from "@/lib/session";
+import { SocketProvider } from "@/lib/socket";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -37,20 +38,24 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <StatusBar style="dark" />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
-        <Stack.Protected guard={!signedIn} redirectTo="/">
-          <Stack.Screen name="(auth)" />
-        </Stack.Protected>
-        {/* Signed in but not approved / suspended: only the status screen */}
-        <Stack.Protected guard={signedIn && !active} redirectTo={signedIn ? "/" : "/sign-in"}>
-          <Stack.Screen name="account-status" />
-        </Stack.Protected>
-        <Stack.Protected guard={active} redirectTo={signedIn ? "/account-status" : "/sign-in"}>
-          <Stack.Screen name="(app)" />
-          <Stack.Screen name="banking" options={{ presentation: "modal" }} />
-        </Stack.Protected>
-      </Stack>
+      {/* Connects only while signed in (the token); shared by tabs, chat, … */}
+      <SocketProvider>
+        <StatusBar style="dark" />
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+          <Stack.Protected guard={!signedIn} redirectTo="/">
+            <Stack.Screen name="(auth)" />
+          </Stack.Protected>
+          {/* Signed in but not approved / suspended: only the status screen */}
+          <Stack.Protected guard={signedIn && !active} redirectTo={signedIn ? "/" : "/sign-in"}>
+            <Stack.Screen name="account-status" />
+          </Stack.Protected>
+          <Stack.Protected guard={active} redirectTo={signedIn ? "/account-status" : "/sign-in"}>
+            <Stack.Screen name="(app)" />
+            <Stack.Screen name="chat/[bookingId]" />
+            <Stack.Screen name="banking" options={{ presentation: "modal" }} />
+          </Stack.Protected>
+        </Stack>
+      </SocketProvider>
     </QueryClientProvider>
   );
 }

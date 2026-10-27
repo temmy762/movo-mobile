@@ -1,4 +1,4 @@
-import type { DriverBooking, DriverStats, LocationPoint, OnboardingStatus } from "@movo/shared";
+import type { BookingMessage, DriverBooking, DriverStats, LocationPoint, OnboardingStatus } from "@movo/shared";
 import { request } from "../client";
 
 export const onboardingStatus = () => request<OnboardingStatus>("/api/driver/onboarding/status");
@@ -58,3 +58,10 @@ export const rateRider = (id: string, rating: number, feedback: string | null) =
 /* On a trip: persisted and relayed live to the rider's map. 409 once the ride ended. */
 export const tripLocation = (id: string, p: { lat: number; lng: number; heading?: number; speed?: number }) =>
   request<{ ok: true }>(`/api/bookings/${id}/driver-location`, { body: p });
+
+/* ── Chat with the rider (standard chauffeur / Safe Ride PRIMARY only) ── */
+
+export const messages = (bookingId: string) => request<BookingMessage[]>(`/api/bookings/${bookingId}/messages`);
+
+export const sendMessage = (bookingId: string, text: string) =>
+  request<unknown>(`/api/bookings/${bookingId}/messages`, { body: { text } });

@@ -129,3 +129,11 @@ export type CoDriver = {
 };
 
 export type CareDriverResponse = { assignment: CareAssignment | null; coDriver: CoDriver | null; earning: number };
+
+/* GET /api/bookings/:id/messages — the rider and their chauffeur (Safe Ride: PRIMARY) */
+export type BookingMessage = {
+  id: string;
+  sender: "driver" | "rider";
+  text: string;
+  createdAt: string;
+};

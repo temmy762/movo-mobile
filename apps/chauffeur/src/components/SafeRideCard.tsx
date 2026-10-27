@@ -11,7 +11,7 @@ import { stopsOf } from "@/lib/useTrip";
 import { Route, dark, kit, money } from "./homeKit";
 import {
   Banner, GradientButton, OutlineButton, RatingModal, SquareButton, WaitingBanner,
-  callNumber, openNavigation, parts,
+  callNumber, openChat, openNavigation, parts,
 } from "./tripParts";
 
 type SafeRide = ReturnType<typeof useSafeRide>;
@@ -123,6 +123,9 @@ export function SafeRideCard({ safe }: { safe: SafeRide }) {
   const uberReturn = a.booking.returnMode === "UBER";
   /* SUPPORT may collect PRIMARY only once the customer is delivered */
   const waitingOnPrimary = !primary && safe.coDriver?.status !== "AWAITING_RETURN";
+  const chat = primary
+    ? <SquareButton icon="message" label="Chat with customer" onPress={() => openChat(a.booking.id, a.booking.bookingNumber)} />
+    : null;
   const navTarget = primary
     ? (safe.phase === "started" ? a.booking.dropoff : a.booking.pickup)
     : (safe.phase === "started" ? a.booking.pickup : a.booking.dropoff);
@@ -171,6 +174,7 @@ export function SafeRideCard({ safe }: { safe: SafeRide }) {
       {safe.phase === "accepted" && !needsSetOff(a) && (
         <View style={parts.actions}>
           {primary && phone ? <SquareButton icon="phone" label="Call customer" onPress={() => callNumber(phone)} /> : null}
+          {chat}
           <SquareButton icon="navigation" label="Navigate" onPress={() => openNavigation(navTarget)} />
           <GradientButton title={safe.busy ? "…" : primary ? "I've Arrived at Pickup" : "I've Arrived at Rendezvous"}
             onPress={safe.arrive} disabled={safe.busy} />
@@ -187,6 +191,7 @@ export function SafeRideCard({ safe }: { safe: SafeRide }) {
           )}
           <View style={parts.actions}>
             {primary && phone ? <SquareButton icon="phone" label="Call customer" onPress={() => callNumber(phone)} /> : null}
+            {chat}
             <GradientButton title={safe.busy ? "…" : primary ? "Start Ride" : "Pick Up Primary Chauffeur"}
               onPress={safe.start} disabled={safe.busy || waitingOnPrimary} />
           </View>
@@ -195,6 +200,7 @@ export function SafeRideCard({ safe }: { safe: SafeRide }) {
 
       {safe.phase === "started" && (
         <View style={parts.actions}>
+          {chat}
           <SquareButton icon="navigation" label="Navigate" onPress={() => openNavigation(navTarget)} />
           <GradientButton title={safe.busy ? "Saving…" : primary ? "Customer Dropped Off" : "Complete — Returned Primary to Vehicle"}
             onPress={safe.complete} disabled={safe.busy} />

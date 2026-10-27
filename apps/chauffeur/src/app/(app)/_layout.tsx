@@ -1,20 +1,21 @@
 import { useEffect } from "react";
 import { Tabs, router } from "expo-router";
 import { Icon, colors, fonts } from "@movo/ui";
-import { SocketProvider } from "@/lib/socket";
 import { onNotificationTap, registerForPush } from "@/lib/push";
 
 export default function AppTabs() {
   /* Signed in and approved: this phone receives the chauffeur's alerts */
   useEffect(() => { registerForPush(); }, []);
 
-  /* Every chauffeur alert is handled on Home (requests, trips, Safe Ride),
-     which re-reads its state when the app comes to the foreground */
-  useEffect(() => onNotificationTap(() => router.navigate("/")), []);
+  /* A rider's message opens the chat; every other alert is handled on Home
+     (requests, trips, Safe Ride), which re-reads its state on foreground */
+  useEffect(() => onNotificationTap((data) => {
+    if (data.type === "new_message_driver" && data.bookingId) router.navigate({ pathname: "/chat/[bookingId]", params: { bookingId: data.bookingId } });
+    else router.navigate("/");
+  }), []);
 
   return (
-    <SocketProvider>
-      <Tabs
+    <Tabs
         screenOptions={{
           headerShown: false,
           tabBarActiveTintColor: colors.navy,
@@ -25,7 +26,6 @@ export default function AppTabs() {
       >
         <Tabs.Screen name="index" options={{ title: "Home", tabBarIcon: ({ color }) => <Icon name="home" color={color} /> }} />
         <Tabs.Screen name="profile" options={{ title: "Profile", tabBarIcon: ({ color }) => <Icon name="user" color={color} /> }} />
-      </Tabs>
-    </SocketProvider>
+    </Tabs>
   );
 }

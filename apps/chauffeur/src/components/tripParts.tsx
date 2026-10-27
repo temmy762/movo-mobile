@@ -2,6 +2,7 @@
 import { useState, type ReactNode } from "react";
 import { KeyboardAvoidingView, Linking, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
 import { Icon, colors, fonts } from "@movo/ui";
 import type { WaitingClock } from "@/lib/waiting";
 import { dark, gradient, kit } from "./homeKit";
@@ -35,7 +36,10 @@ export function OutlineButton({ title, onPress, disabled }: { title: string; onP
   );
 }
 
-export function SquareButton({ icon, label, onPress }: { icon: "navigation" | "phone"; label: string; onPress: () => void }) {
+export const openChat = (bookingId: string, number?: string | null) =>
+  router.push({ pathname: "/chat/[bookingId]", params: { bookingId, ...(number ? { number } : {}) } });
+
+export function SquareButton({ icon, label, onPress }: { icon: "navigation" | "phone" | "message"; label: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} style={[kit.btnOutline, parts.square]} accessibilityRole="button" accessibilityLabel={label}>
       <Icon name={icon} size={18} color={dark.soft} />

@@ -11,7 +11,7 @@ import { emailSupport } from "@/lib/links";
 import { Route, dark, kit, money } from "./homeKit";
 import {
   Banner, GradientButton, RatingModal, RedOutlineButton, SquareButton, WaitingBanner,
-  callNumber, openNavigation, parts,
+  callNumber, openChat, openNavigation, parts,
 } from "./tripParts";
 
 export function TripCard({ booking, onFinished }: {
@@ -65,6 +65,7 @@ export function TripCard({ booking, onFinished }: {
         {phone && trip.step !== "started" ? (
           <SquareButton icon="phone" label="Call rider" onPress={() => callNumber(phone)} />
         ) : null}
+        <SquareButton icon="message" label="Chat with rider" onPress={() => openChat(booking.id, booking.bookingNumber)} />
         <SquareButton icon="navigation" label={beforeStart ? "Navigate to pickup" : "Navigate to destination"}
           onPress={() => openNavigation(destination)} />
         {trip.step === "accepted" && (

@@ -91,11 +91,16 @@ export async function registerForPush(): Promise<void> {
   }
 }
 
-/** Calls `onTap` when the chauffeur taps an alert (including the one that launched the app) */
-export function onNotificationTap(onTap: () => void): () => void {
+type PushData = { type?: string; bookingId?: string };
+
+/** Calls `onTap` with the alert's data when the chauffeur taps one (including the one that launched the app) */
+export function onNotificationTap(onTap: (data: PushData) => void): () => void {
   if (!Notifications) return () => {};
-  if (Notifications.getLastNotificationResponse()) onTap();
-  const sub = Notifications.addNotificationResponseReceivedListener(() => onTap());
+  const dataOf = (r: { notification: { request: { content: { data?: unknown } } } }) =>
+    (r.notification.request.content.data ?? {}) as PushData;
+  const last = Notifications.getLastNotificationResponse();
+  if (last) onTap(dataOf(last));
+  const sub = Notifications.addNotificationResponseReceivedListener((r) => onTap(dataOf(r)));
   return () => sub.remove();
 }
 
