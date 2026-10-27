@@ -23,14 +23,21 @@ const TRIP_KEY = "movo_trip";
 
 TaskManager.defineTask<{ locations: Location.LocationObject[] }>(TASK, async ({ data, error }) => {
   if (error || !data?.locations?.length) return;
+  await deliver(data.locations);
+});
 
+/* Foreground-only fallback where the background task can't run (Expo Go on
+   Android has no background location) */
+let watcher: Location.LocationSubscription | null = null;
+
+async function deliver(locations: Location.LocationObject[]) {
   /* Went offline or signed out since the OS queued these — stop, send nothing */
   if ((await SecureStore.getItemAsync(ONLINE_KEY)) !== "true") {
     await stopShiftLocation();
     return;
   }
 
-  const points: LocationPoint[] = data.locations.map((l) => ({
+  const points: LocationPoint[] = locations.map((l) => ({
     lat: l.coords.latitude,
     lng: l.coords.longitude,
     timestamp: l.timestamp,
@@ -48,7 +55,7 @@ TaskManager.defineTask<{ locations: Location.LocationObject[] }>(TASK, async ({ 
 
   const tripId = await SecureStore.getItemAsync(TRIP_KEY);
   if (tripId) {
-    const { coords } = data.locations[data.locations.length - 1];
+    const { coords } = locations[locations.length - 1];
     await driverApi.tripLocation(tripId, {
       lat: coords.latitude,
       lng: coords.longitude,
@@ -61,7 +68,7 @@ TaskManager.defineTask<{ locations: Location.LocationObject[] }>(TASK, async ({ 
       }
     });
   }
-});
+}
 
 /* Every 15 s / 50 m on shift; every 5 s / 10 m on a trip (the web's rate) */
 function trackingOptions(onTrip: boolean): Location.LocationTaskOptions {
@@ -94,7 +101,15 @@ export async function setTripTracking(bookingId: string | null): Promise<void> {
   if (await Location.hasStartedLocationUpdatesAsync(TASK).catch(() => false)) {
     await Location.stopLocationUpdatesAsync(TASK).catch(() => {});
     await Location.startLocationUpdatesAsync(TASK, trackingOptions(!!bookingId)).catch(() => {});
+  } else if (watcher) {
+    await startWatcher(!!bookingId);
   }
+}
+
+async function startWatcher(onTrip: boolean) {
+  watcher?.remove();
+  const { accuracy, timeInterval, distanceInterval } = trackingOptions(onTrip);
+  watcher = await Location.watchPositionAsync({ accuracy, timeInterval, distanceInterval }, (l) => { deliver([l]); });
 }
 
 export type LocationAccess = "always" | "foreground" | "denied";
@@ -108,9 +123,15 @@ export async function startShiftLocation(): Promise<LocationAccess> {
   if (fg.status !== "granted") return "denied";
   const bg = await Location.requestBackgroundPermissionsAsync().catch(() => null);
 
+  let background = true;
   if (!(await Location.hasStartedLocationUpdatesAsync(TASK).catch(() => false))) {
     const onTrip = !!(await SecureStore.getItemAsync(TRIP_KEY));
-    await Location.startLocationUpdatesAsync(TASK, trackingOptions(onTrip));
+    try {
+      await Location.startLocationUpdatesAsync(TASK, trackingOptions(onTrip));
+    } catch {
+      background = false;
+      await startWatcher(onTrip);
+    }
   }
 
   /* Send a first fix right away so the server has a fresh position */
@@ -118,10 +139,12 @@ export async function startShiftLocation(): Promise<LocationAccess> {
     .then((l) => driverApi.sendLocation([{ lat: l.coords.latitude, lng: l.coords.longitude, timestamp: l.timestamp }]))
     .catch(() => {});
 
-  return bg?.status === "granted" ? "always" : "foreground";
+  return background && bg?.status === "granted" ? "always" : "foreground";
 }
 
 export async function stopShiftLocation(): Promise<void> {
+  watcher?.remove();
+  watcher = null;
   if (await Location.hasStartedLocationUpdatesAsync(TASK).catch(() => false)) {
     await Location.stopLocationUpdatesAsync(TASK).catch(() => {});
   }
