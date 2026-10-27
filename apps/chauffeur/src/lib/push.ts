@@ -14,7 +14,8 @@
  * importing it there crashes the app at startup.
  */
 import { Platform } from "react-native";
-import Constants, { ExecutionEnvironment } from "expo-constants";
+import Constants from "expo-constants";
+import { isRunningInExpoGo } from "expo";
 import * as Device from "expo-device";
 import * as SecureStore from "expo-secure-store";
 import { push as pushApi } from "@movo/api";
@@ -27,7 +28,7 @@ const REQUEST_TYPES = new Set(["new_booking", "care_primary", "care_support"]);
 export const isRequestPush = (data: unknown) =>
   REQUEST_TYPES.has(String((data as { type?: unknown } | null)?.type ?? ""));
 
-const inExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+const inExpoGo = isRunningInExpoGo();
 
 const Notifications: typeof import("expo-notifications") | null = inExpoGo
   ? null
