@@ -224,3 +224,35 @@ export type DriverVehicle = {
   tier: string;
   photoUrl: string | null;
 };
+
+/* ── Chauffeur onboarding (GET/PATCH /api/driver/onboarding) ── */
+
+export type OnboardingDocType =
+  | "PROFILE_PHOTO" | "DRIVERS_LICENSE" | "BACKGROUND_CHECK" | "DRIVERS_ABSTRACT" | "WORK_ELIGIBILITY"
+  | "VEHICLE_REGISTRATION" | "VEHICLE_INSURANCE" | "VEHICLE_PHOTO" | "BANKING_INFO";
+
+export type OnboardingFields = {
+  dob: string; licenseNumber: string;
+  vehicleMake: string; vehicleModel: string; vehicleYear: string;
+  vehiclePlate: string; vehicleTier: string; vehicleColor: string;
+  bankAccountName: string; bankInstitution: string; bankAccountNumber: string; bankRoutingNumber: string;
+  signature: string;
+};
+
+export type OnboardingConsents = {
+  gpsConsent: boolean; privacyPolicy: boolean; legalNotice: boolean; termsAccepted: boolean; contractSigned: boolean;
+};
+
+export type OnboardingRecord = Partial<Record<keyof OnboardingFields, string | null>> & {
+  type?: "INDIVIDUAL" | "FLEET" | null;
+  currentStep?: number | null;
+  vehicleOption?: "OWN" | "RENT" | null;
+  submittedAt?: string | null;
+  profilePhotoUrl?: string | null;
+  gpsConsentAt?: string | null;
+  privacyPolicyAt?: string | null;
+  legalNoticeAt?: string | null;
+  termsAcceptedAt?: string | null;
+  contractSignedAt?: string | null;
+  documents?: { type: OnboardingDocType; fileName: string }[];
+};

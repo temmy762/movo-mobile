@@ -3,9 +3,10 @@
  * the web login: pending review / rejected / onboarding not finished /
  * suspended. The server enforces this too (lib/driverAccess.ts).
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { driver as driverApi } from "@movo/api";
 import type { OnboardingStatus } from "@movo/shared";
@@ -13,7 +14,11 @@ import { Button, Card, Icon, type IconName, colors, fontSizes, fonts, spacing } 
 import { useSession } from "@/lib/session";
 import { emailSupport, openWeb } from "@/lib/links";
 
-type StatusView = { icon: IconName; tone: string; title: string; body: string; note?: string | null; finishOnWeb?: boolean };
+type StatusView = {
+  icon: IconName; tone: string; title: string; body: string; note?: string | null;
+  /* Individual chauffeurs finish in the app; fleet partners on the web */
+  finish?: "app" | "web";
+};
 
 function describe(status: OnboardingStatus | undefined, driverStatus: string | undefined): StatusView {
   if (driverStatus === "SUSPENDED") {
@@ -23,7 +28,9 @@ function describe(status: OnboardingStatus | undefined, driverStatus: string | u
     case "REJECTED":
       return { icon: "alert", tone: colors.danger, title: "Application not approved", body: "Unfortunately your application wasn't approved this time.", note: status.adminNote };
     case "NOT_SUBMITTED":
-      return { icon: "list", tone: colors.navy, title: "Finish your application", body: "Your chauffeur application isn't complete yet. Finish it on movoprive.com — log in there with the same email and password.", finishOnWeb: true };
+      return status.type === "FLEET"
+        ? { icon: "list", tone: colors.navy, title: "Finish your application", body: "Your fleet partner application isn't complete yet. Finish it on movoprive.com — log in there with the same email and password.", finish: "web" }
+        : { icon: "list", tone: colors.navy, title: "Finish your application", body: "Your chauffeur application isn't complete yet — it takes about 15 minutes. Your progress is saved as you go.", finish: "app" };
     default:
       return { icon: "clock", tone: colors.navy, title: "Application under review", body: "Thanks for applying. Our team is reviewing your documents — we'll email you as soon as you're approved. This usually takes 1–2 business days." };
   }
@@ -36,6 +43,13 @@ export default function AccountStatus() {
   const [checking, setChecking] = useState(false);
 
   const view = describe(status.data, status.data?.driverStatus ?? driver?.status);
+
+  /* Straight from "Create account": open the application */
+  useEffect(() => {
+    if (view.finish !== "app" || !useSession.getState().justRegistered) return;
+    useSession.setState({ justRegistered: false });
+    router.push("/onboarding");
+  }, [view.finish]);
 
   /* Approval flips driver.status to ACTIVE; the root layout then opens the app */
   const checkAgain = async () => {
@@ -62,8 +76,9 @@ export default function AccountStatus() {
         </Card>
 
         <View style={{ gap: spacing.md, marginTop: spacing.xl }}>
-          {view.finishOnWeb && <Button title="Continue on movoprive.com" onPress={() => openWeb("/driver/onboarding/login")} />}
-          <Button title="Check again" variant={view.finishOnWeb ? "secondary" : "primary"} onPress={checkAgain} loading={checking} />
+          {view.finish === "app" && <Button title="Continue application" onPress={() => router.push("/onboarding")} />}
+          {view.finish === "web" && <Button title="Continue on movoprive.com" onPress={() => openWeb("/driver/onboarding/login")} />}
+          <Button title="Check again" variant={view.finish ? "secondary" : "primary"} onPress={checkAgain} loading={checking} />
           <Button title="Contact support" variant="secondary" onPress={() => emailSupport("Chauffeur account")} />
           <Button title="Sign out" variant="secondary" onPress={signOut} />
         </View>

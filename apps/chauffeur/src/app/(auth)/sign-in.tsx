@@ -4,10 +4,9 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import { Button, Icon, Input, colors, fontSizes, fonts, gradients, spacing } from "@movo/ui";
 import { signInErrorMessage, useSession } from "@/lib/session";
-import { openWeb } from "@/lib/links";
 
 export default function SignIn() {
   const signIn = useSession((s) => s.signIn);
@@ -82,12 +81,12 @@ export default function SignIn() {
         </KeyboardAvoidingView>
       </SafeAreaView>
 
-      {/* Bottom bar — Become a Partner (sign-up runs on the web until onboarding is in the app) */}
+      {/* Bottom bar — Become a Partner (individual chauffeurs sign up here; fleets on the web) */}
       <LinearGradient {...gradients.cta}>
         <SafeAreaView edges={["bottom"]}>
           <Text style={styles.partner}>
             Don&apos;t have an account yet?{" "}
-            <Text style={styles.partnerLink} onPress={() => openWeb("/auth/select")}>Become a Partner</Text>
+            <Text style={styles.partnerLink} onPress={() => router.push("/register")}>Become a Partner</Text>
           </Text>
         </SafeAreaView>
       </LinearGradient>

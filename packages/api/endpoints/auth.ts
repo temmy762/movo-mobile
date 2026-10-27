@@ -12,3 +12,9 @@ export const logout = () => request<{ ok?: boolean }>("/api/auth/logout", { meth
    The reset link opens the web reset page. */
 export const driverForgotPassword = (email: string) =>
   request<{ success: true }>("/api/auth/driver/forgot-password", { body: { email } });
+
+/* New chauffeur account (Winnipeg, Canada for now). 409 = email or phone already used.
+   Password: at least 8 characters. */
+export const driverRegister = (body: {
+  firstName: string; lastName: string; email: string; phone?: string; password: string; country: string; city: string;
+}) => request<{ driver: ApiDriver; token: string }>("/api/auth/driver/register", { body });

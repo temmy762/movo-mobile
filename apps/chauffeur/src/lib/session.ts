@@ -17,10 +17,14 @@ type SessionState = {
   ready: boolean;
   token: string | null;
   driver: ApiDriver | null;
+  /** Set by signUp so the application opens right after the account is created */
+  justRegistered: boolean;
   restore: () => Promise<void>;
   /** Re-reads the chauffeur (status can change: approved, suspended, removed) */
   refresh: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  /** Creates the chauffeur account and signs in; the application comes next */
+  signUp: (fields: Parameters<typeof auth.driverRegister>[0]) => Promise<void>;
   signOut: () => Promise<void>;
   /** Drops the session locally (after account deletion — the server already ended it) */
   clear: () => Promise<void>;
@@ -30,6 +34,7 @@ export const useSession = create<SessionState>((set, get) => ({
   ready: false,
   token: null,
   driver: null,
+  justRegistered: false,
 
   async restore() {
     const token = await SecureStore.getItemAsync(TOKEN_KEY);
@@ -55,6 +60,12 @@ export const useSession = create<SessionState>((set, get) => ({
     const { driver, token } = await auth.driverLogin(email.trim(), password);
     await SecureStore.setItemAsync(TOKEN_KEY, token);
     set({ token, driver });
+  },
+
+  async signUp(fields) {
+    const { driver, token } = await auth.driverRegister(fields);
+    await SecureStore.setItemAsync(TOKEN_KEY, token);
+    set({ token, driver, justRegistered: true });
   },
 
   async signOut() {
