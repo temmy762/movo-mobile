@@ -13,12 +13,13 @@
  * light poll, for missed events) re-reads it.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Vibration } from "react-native";
+import { AppState, Vibration } from "react-native";
 import * as Haptics from "expo-haptics";
 import { ApiError, app as appApi, care as careApi, driver as driverApi } from "@movo/api";
 import { SOCKET_EVENTS, type CareAssignment, type CareDriverResponse, type CoDriver } from "@movo/shared";
 import { setTripTracking } from "./location";
 import { useSocket } from "./socket";
+import { startRequestAlert, stopRequestAlert } from "./alertSound";
 import { SAFE_RIDE_WAITING, useWaitingClock, type WaitInfo } from "./waiting";
 
 const OFFER_SECONDS = 30;
@@ -118,7 +119,9 @@ export function useSafeRide({ canOffer, onAccepted }: {
     const timer = setInterval(() => {
       if (phaseRef.current !== "idle" || canOffer()) refresh();
     }, POLL_MS);
-    return () => { offs.forEach((off) => off()); clearInterval(timer); };
+    /* Back from the background (e.g. a push was tapped): offers last 30 s */
+    const appState = AppState.addEventListener("change", (s) => { if (s === "active") refresh(); });
+    return () => { offs.forEach((off) => off()); clearInterval(timer); appState.remove(); };
   }, [on, refresh, canOffer]);
 
   /* 30 s offer: countdown + repeating vibration until answered */
@@ -127,6 +130,7 @@ export function useSafeRide({ canOffer, onAccepted }: {
     if (!offerId) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
     Vibration.vibrate([0, 600, 400], true);
+    startRequestAlert();
     const started = Date.now();
     const timer = setInterval(() => {
       const left = OFFER_SECONDS - Math.floor((Date.now() - started) / 1000);
@@ -137,7 +141,7 @@ export function useSafeRide({ canOffer, onAccepted }: {
         clear();
       }
     }, 250);
-    return () => { clearInterval(timer); Vibration.cancel(); };
+    return () => { clearInterval(timer); Vibration.cancel(); stopRequestAlert(); };
   }, [offerId, clear]);
 
   /* PRIMARY waiting clock at pickup, with the Safe Ride rules */
@@ -186,6 +190,7 @@ export function useSafeRide({ canOffer, onAccepted }: {
     if (!assignment) return;
     const id = assignment.id;
     Vibration.cancel();
+    stopRequestAlert();
     return run(async () => {
       try {
         await careApi.updateAssignment(id, "ACCEPTED");

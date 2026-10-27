@@ -9,11 +9,12 @@
  * separately — they are never in this pool.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Vibration } from "react-native";
+import { AppState, Vibration } from "react-native";
 import * as Haptics from "expo-haptics";
 import { ApiError, driver as driverApi } from "@movo/api";
 import { SOCKET_EVENTS, type DriverBooking } from "@movo/shared";
 import { useSocket } from "./socket";
+import { startRequestAlert, stopRequestAlert } from "./alertSound";
 
 const POLL_MS = 5_000;
 const OFFER_SECONDS = 30;
@@ -91,7 +92,8 @@ export function useRideRequests({ online, onAccepted }: {
     const timer = setInterval(checkPool, POLL_MS);
     const offCreated = on(SOCKET_EVENTS.BOOKING_CREATED, () => { checkPool(); });
     const offReleased = on(SOCKET_EVENTS.DRIVER_RELEASED, () => { checkPool(); });
-    return () => { clearInterval(timer); offCreated(); offReleased(); };
+    const appState = AppState.addEventListener("change", (st) => { if (st === "active") checkPool(); });
+    return () => { clearInterval(timer); offCreated(); offReleased(); appState.remove(); };
   }, [phase, checkPool, on]);
 
   /* The offered / held ride was cancelled */
@@ -120,6 +122,7 @@ export function useRideRequests({ online, onAccepted }: {
     if (phase !== "requesting" || !booking) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
     Vibration.vibrate([0, 600, 400], true);
+    startRequestAlert();
     const started = Date.now();
     const timer = setInterval(() => {
       const left = OFFER_SECONDS - Math.floor((Date.now() - started) / 1000);
@@ -130,13 +133,14 @@ export function useRideRequests({ online, onAccepted }: {
         backToSearching();
       }
     }, 250);
-    return () => { clearInterval(timer); Vibration.cancel(); };
+    return () => { clearInterval(timer); Vibration.cancel(); stopRequestAlert(); };
   }, [phase, booking, backToSearching]);
 
   const accept = useCallback(async () => {
     if (!booking || acting) return;
     setActing(true);
     Vibration.cancel();
+    stopRequestAlert();
     try {
       await driverApi.acceptBooking(booking.id);
       declined.current.clear();

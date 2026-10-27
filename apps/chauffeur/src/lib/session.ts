@@ -7,6 +7,7 @@ import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
 import { ApiError, auth, configureApi } from "@movo/api";
 import type { ApiDriver } from "@movo/shared";
+import { forgetPushDevice } from "./push";
 
 const TOKEN_KEY = "movo_session";
 
@@ -62,6 +63,7 @@ export const useSession = create<SessionState>((set, get) => ({
   },
 
   async clear() {
+    await forgetPushDevice();
     await SecureStore.deleteItemAsync(TOKEN_KEY);
     set({ token: null, driver: null });
   },

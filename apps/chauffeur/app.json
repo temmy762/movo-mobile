@@ -40,6 +40,19 @@
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
         }
+      ],
+      [
+        "expo-audio",
+        { "microphonePermission": false }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/android-icon-monochrome.png",
+          "color": "#131936",
+          "defaultChannel": "default",
+          "sounds": ["./assets/sounds/ride_request.wav"]
+        }
       ]
     ],
     "experiments": {
