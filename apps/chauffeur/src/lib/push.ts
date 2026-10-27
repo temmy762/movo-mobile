@@ -19,9 +19,11 @@ import { isRunningInExpoGo } from "expo";
 import * as Device from "expo-device";
 import * as SecureStore from "expo-secure-store";
 import { push as pushApi } from "@movo/api";
-import { useShift } from "./shift";
 
 const PUSH_TOKEN_KEY = "movo_push_token";
+/* Same key as lib/location.ts ONLINE_KEY — read directly: importing the shift
+   store here would make an import cycle (session → push → shift → location) */
+const ONLINE_KEY = "movo_online";
 export const REQUEST_CHANNEL = "ride-requests";
 const REQUEST_TYPES = new Set(["new_booking", "care_primary", "care_support"]);
 
@@ -38,7 +40,7 @@ Notifications?.setNotificationHandler({
   handleNotification: async (n) => {
     /* Online, Home already rings for requests; offline (a reservation sent
        to every chauffeur) the banner is the only way to hear about it */
-    const quiet = isRequestPush(n.request.content.data) && useShift.getState().online;
+    const quiet = isRequestPush(n.request.content.data) && (await SecureStore.getItemAsync(ONLINE_KEY)) === "true";
     return {
       shouldShowBanner: !quiet,
       shouldShowList: true,
