@@ -46,6 +46,14 @@
         { "microphonePermission": false }
       ],
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Movo Chauffeur uses your photo library so you can choose the profile photo riders see at pickup.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/android-icon-monochrome.png",

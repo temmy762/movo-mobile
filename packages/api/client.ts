@@ -39,14 +39,16 @@ export async function request<T>(
 
   const token = await config.getToken();
   const headers: Record<string, string> = { "X-Movo-Client": "mobile", Accept: "application/json" };
-  if (init.body !== undefined) headers["Content-Type"] = "application/json";
+  /* FormData (file uploads) sets its own multipart boundary */
+  const isForm = typeof FormData !== "undefined" && init.body instanceof FormData;
+  if (init.body !== undefined && !isForm) headers["Content-Type"] = "application/json";
   if (token) headers.Authorization = `Bearer ${token}`;
 
   try {
     const res = await fetch(`${config.baseUrl}${path}`, {
       method: init.method ?? (init.body !== undefined ? "POST" : "GET"),
       headers,
-      body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+      body: isForm ? (init.body as FormData) : init.body !== undefined ? JSON.stringify(init.body) : undefined,
       signal: controller.signal,
     });
     const data = await res.json().catch(() => null);

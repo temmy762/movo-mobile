@@ -53,6 +53,9 @@ export default function RootLayout() {
             <Stack.Screen name="(app)" />
             <Stack.Screen name="chat/[bookingId]" />
             <Stack.Screen name="banking" />
+            <Stack.Screen name="vehicle" />
+            <Stack.Screen name="report-incident" />
+            <Stack.Screen name="report-found-item" />
           </Stack.Protected>
         </Stack>
       </SocketProvider>

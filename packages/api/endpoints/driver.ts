@@ -1,6 +1,6 @@
 import type {
-  BankingDetails, BookingMessage, DriverBooking, DriverRide, DriverStats, LocationPoint, OnboardingStatus, ReservedRide,
-  StripeConnectStatus, Wallet,
+  BankingDetails, BookingMessage, DriverBooking, DriverRatings, DriverRide, DriverStats, DriverVehicle, IncidentType,
+  LocationPoint, OnboardingStatus, ReservedRide, StripeConnectStatus, Wallet,
 } from "@movo/shared";
 import { request } from "../client";
 
@@ -102,3 +102,26 @@ export const bankingDetails = () => request<{ banking: BankingDetails | null }>(
 /* Only the fields sent are changed */
 export const updateBankingDetails = (fields: Partial<Record<keyof BankingDetails, string>>) =>
   request<{ success: true }>("/api/driver/profile/banking", { method: "PATCH", body: fields });
+
+/* ── Profile ── */
+
+export const ratings = () => request<DriverRatings>("/api/driver/ratings");
+
+export const vehicle = () => request<{ vehicle: DriverVehicle | null }>("/api/driver/vehicle");
+
+export const profilePhoto = () => request<{ photoUrl: string | null }>("/api/driver/profile/photo");
+
+/* JPG / PNG / WebP, max 2 MB */
+export const uploadProfilePhoto = (file: { uri: string; name: string; type: string }) => {
+  const form = new FormData();
+  /* React Native's FormData takes a { uri, name, type } file descriptor */
+  form.append("photo", file as unknown as Blob);
+  return request<{ photoUrl: string }>("/api/driver/profile/photo", { method: "POST", body: form });
+};
+
+/* Description: at least 10 characters. bookingId must be one of this chauffeur's rides. */
+export const reportIncident = (body: { bookingId?: string; type: IncidentType; description: string }) =>
+  request<unknown>("/api/incidents", { body });
+
+export const reportFoundItem = (body: { bookingId?: string; itemDescription: string; contactInfo?: string }) =>
+  request<unknown>("/api/lost-found", { body });

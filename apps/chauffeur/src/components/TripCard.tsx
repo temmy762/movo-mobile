@@ -7,7 +7,7 @@ import { Text, View } from "react-native";
 import type { DriverBooking } from "@movo/shared";
 import { Icon } from "@movo/ui";
 import { useTrip } from "@/lib/useTrip";
-import { emailSupport } from "@/lib/links";
+import { router } from "expo-router";
 import { Route, dark, kit, money } from "./homeKit";
 import {
   Banner, GradientButton, HandBackModal, RatingModal, RedOutlineButton, SquareButton, WaitingBanner,
@@ -81,7 +81,10 @@ export function TripCard({ booking, onFinished }: {
 
       {beforeStart && <RedOutlineButton title="Can't make this ride — Cancel" onPress={() => setShowCancel(true)} />}
       {trip.step === "started" && (
-        <RedOutlineButton title="Report Incident" onPress={() => emailSupport(`Incident report — ride #${number}`)} />
+        <RedOutlineButton title="Report Incident" onPress={() => router.push({
+          pathname: "/report-incident",
+          params: { bookingId: booking.id, ...(booking.bookingNumber ? { number: booking.bookingNumber } : {}) },
+        })} />
       )}
 
       <HandBackModal visible={showCancel} title="Cancel this ride?" keepLabel="Keep Ride"

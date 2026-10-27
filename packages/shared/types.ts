@@ -207,3 +207,20 @@ export type BankingDetails = {
   bankAccountNumber: string | null;
   bankRoutingNumber: string | null;
 };
+
+/* GET /api/driver/ratings — riders' ratings of this chauffeur */
+export type DriverRatings = {
+  avgRating: number | null;
+  totalReviews: number;
+  reviews: { id: string; clientName: string; rating: number; review: string | null; createdAt: string }[];
+};
+
+/* GET /api/driver/vehicle */
+export type DriverVehicle = {
+  make: string;
+  model: string;
+  year: number;
+  plate: string;
+  tier: string;
+  photoUrl: string | null;
+};
