@@ -77,6 +77,10 @@ export type DriverBooking = {
   passengers?: number | null;
   pickupInstructions?: string | null;
   stops?: unknown;
+  pickupLat?: number | null;
+  pickupLng?: number | null;
+  dropoffLat?: number | null;
+  dropoffLng?: number | null;
 };
 
 export type LocationPoint = { lat: number; lng: number; timestamp: number };
@@ -111,6 +115,10 @@ export type CareAssignment = {
     passengers?: number | null;
     pickupInstructions?: string | null;
     stops?: unknown;
+    pickupLat?: number | null;
+    pickupLng?: number | null;
+    dropoffLat?: number | null;
+    dropoffLng?: number | null;
   };
 };
 

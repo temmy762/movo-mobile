@@ -21,6 +21,7 @@ import { useSocket } from "@/lib/socket";
 import { isReservation, useRideRequests } from "@/lib/useRideRequests";
 import { Route, dark, gradient, kit, money } from "@/components/homeKit";
 import { TripCard } from "@/components/TripCard";
+import { HomeMap, type MapPin } from "@/components/HomeMap";
 import { SafeRideCard, SafeRideOffer } from "@/components/SafeRideCard";
 import { useSafeRide } from "@/lib/useSafeRide";
 
@@ -89,6 +90,17 @@ export default function Home() {
   const notice = shift.error ?? safe.notice ?? requests.notice;
   const onAJob = requests.phase === "accepted" || (safe.phase !== "idle" && safe.phase !== "requesting");
 
+  /* Pickup / drop-off pins for the ride in progress */
+  const ride = requests.phase === "accepted" ? requests.booking
+    : safe.phase !== "idle" && safe.phase !== "requesting" ? safe.assignment?.booking : null;
+  const pins: MapPin[] = [];
+  if (ride?.pickupLat != null && ride.pickupLng != null) {
+    pins.push({ kind: "pickup", title: "Pickup", coordinate: { latitude: ride.pickupLat, longitude: ride.pickupLng } });
+  }
+  if (ride?.dropoffLat != null && ride.dropoffLng != null) {
+    pins.push({ kind: "dropoff", title: "Drop-off", coordinate: { latitude: ride.dropoffLat, longitude: ride.dropoffLng } });
+  }
+
   return (
     <View style={{ flex: 1, backgroundColor: dark.bg }}>
       <StatusBar style="light" />
@@ -132,6 +144,8 @@ export default function Home() {
               </Text>
             </Pressable>
           )}
+
+          <HomeMap pins={pins} />
 
           {/* Ride requests */}
           {safe.phase === "requesting" && safe.assignment ? (
