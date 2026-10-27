@@ -1,4 +1,4 @@
-import type { BookingMessage, DriverBooking, DriverStats, LocationPoint, OnboardingStatus } from "@movo/shared";
+import type { BookingMessage, DriverBooking, DriverStats, LocationPoint, OnboardingStatus, ReservedRide } from "@movo/shared";
 import { request } from "../client";
 
 export const onboardingStatus = () => request<OnboardingStatus>("/api/driver/onboarding/status");
@@ -65,3 +65,12 @@ export const messages = (bookingId: string) => request<BookingMessage[]>(`/api/b
 
 export const sendMessage = (bookingId: string, text: string) =>
   request<unknown>(`/api/bookings/${bookingId}/messages`, { body: { text } });
+
+/* ── Reservations ── */
+
+export const reserved = () => request<ReservedRide[]>("/api/driver/reserved");
+
+/* "I'm heading to pickup": activates the reservation (it becomes the active
+   ride) and only now tells the rider their chauffeur is on the way */
+export const enRoute = (id: string) =>
+  request<{ ok: true; enRouteAt: string }>(`/api/bookings/${id}/en-route`, { method: "PATCH" });

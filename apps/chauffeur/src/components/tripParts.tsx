@@ -146,6 +146,41 @@ export function RatingModal({ visible, title, prompt, hints, onDone }: {
   );
 }
 
+/* Backing out of an accepted ride / reservation before it starts: it is
+   released to another chauffeur — not cancelled or refunded for the rider. */
+export function HandBackModal({ visible, title, body, keepLabel, placeholder, busy, error, onKeep, onConfirm }: {
+  visible: boolean; title: string; body: string; keepLabel: string; placeholder: string;
+  busy: boolean; error: string | null; onKeep: () => void; onConfirm: (reason: string) => void;
+}) {
+  const [reason, setReason] = useState("");
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onKeep}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={parts.overlay}>
+        <View style={parts.sheet}>
+          <View style={[parts.badge, { backgroundColor: "#fef2f2" }]}>
+            <Icon name="alert" size={22} color="#dc2626" />
+          </View>
+          <Text style={parts.sheetTitle}>{title}</Text>
+          <Text style={parts.sheetBody}>{body}</Text>
+          <TextInput value={reason} onChangeText={setReason} multiline maxLength={500}
+            placeholder={placeholder} placeholderTextColor="#9ca3af"
+            style={parts.textarea} />
+          {error && <Text style={parts.errorText}>{error}</Text>}
+          <View style={parts.row}>
+            <Pressable onPress={onKeep} disabled={busy} style={[parts.sheetBtn, parts.sheetBtnOutline]}>
+              <Text style={[parts.sheetBtnText, { color: "#374151" }]}>{keepLabel}</Text>
+            </Pressable>
+            <Pressable onPress={() => onConfirm(reason)} disabled={busy}
+              style={[parts.sheetBtn, { backgroundColor: "#dc2626", opacity: busy ? 0.6 : 1 }]}>
+              <Text style={parts.sheetBtnText}>{busy ? "Cancelling…" : "Yes, Cancel"}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
 export const parts = StyleSheet.create({
   actions: { flexDirection: "row", gap: 10 },
   square: { width: 46, height: 46, borderRadius: 12, alignItems: "center", justifyContent: "center" },

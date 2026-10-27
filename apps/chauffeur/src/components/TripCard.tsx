@@ -3,14 +3,14 @@
  * → Start Ride → End Ride → rate the rider. Mirrors the web chauffeur home.
  */
 import { useState } from "react";
-import { KeyboardAvoidingView, Modal, Platform, Pressable, Text, TextInput, View } from "react-native";
+import { Text, View } from "react-native";
 import type { DriverBooking } from "@movo/shared";
 import { Icon } from "@movo/ui";
 import { useTrip } from "@/lib/useTrip";
 import { emailSupport } from "@/lib/links";
 import { Route, dark, kit, money } from "./homeKit";
 import {
-  Banner, GradientButton, RatingModal, RedOutlineButton, SquareButton, WaitingBanner,
+  Banner, GradientButton, HandBackModal, RatingModal, RedOutlineButton, SquareButton, WaitingBanner,
   callNumber, openChat, openNavigation, parts,
 } from "./tripParts";
 
@@ -84,7 +84,10 @@ export function TripCard({ booking, onFinished }: {
         <RedOutlineButton title="Report Incident" onPress={() => emailSupport(`Incident report — ride #${number}`)} />
       )}
 
-      <CancelModal visible={showCancel} busy={trip.busy} error={showCancel ? trip.error : null}
+      <HandBackModal visible={showCancel} title="Cancel this ride?" keepLabel="Keep Ride"
+        body="We'll automatically find another available chauffeur nearby — the rider will be told we're arranging this, not that their ride was cancelled."
+        placeholder="Reason (optional) — e.g. vehicle issue, running too late"
+        busy={trip.busy} error={showCancel ? trip.error : null}
         onKeep={() => { setShowCancel(false); trip.clearError(); }}
         onConfirm={async (reason) => {
           if (await trip.cancel(reason)) {
@@ -100,41 +103,5 @@ export function TripCard({ booking, onFinished }: {
           onFinished(false);
         }} />
     </View>
-  );
-}
-
-/* Backing out before the trip starts: the ride is released to another
-   chauffeur — not cancelled or refunded for the rider. */
-function CancelModal({ visible, busy, error, onKeep, onConfirm }: {
-  visible: boolean; busy: boolean; error: string | null; onKeep: () => void; onConfirm: (reason: string) => void;
-}) {
-  const [reason, setReason] = useState("");
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onKeep}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={parts.overlay}>
-        <View style={parts.sheet}>
-          <View style={[parts.badge, { backgroundColor: "#fef2f2" }]}>
-            <Icon name="alert" size={22} color="#dc2626" />
-          </View>
-          <Text style={parts.sheetTitle}>Cancel this ride?</Text>
-          <Text style={parts.sheetBody}>
-            We&apos;ll automatically find another available chauffeur nearby — the rider will be told we&apos;re arranging this, not that their ride was cancelled.
-          </Text>
-          <TextInput value={reason} onChangeText={setReason} multiline maxLength={500}
-            placeholder="Reason (optional) — e.g. vehicle issue, running too late" placeholderTextColor="#9ca3af"
-            style={parts.textarea} />
-          {error && <Text style={parts.errorText}>{error}</Text>}
-          <View style={parts.row}>
-            <Pressable onPress={onKeep} disabled={busy} style={[parts.sheetBtn, parts.sheetBtnOutline]}>
-              <Text style={[parts.sheetBtnText, { color: "#374151" }]}>Keep Ride</Text>
-            </Pressable>
-            <Pressable onPress={() => onConfirm(reason)} disabled={busy}
-              style={[parts.sheetBtn, { backgroundColor: "#dc2626", opacity: busy ? 0.6 : 1 }]}>
-              <Text style={parts.sheetBtnText}>{busy ? "Cancelling…" : "Yes, Cancel"}</Text>
-            </Pressable>
-          </View>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
   );
 }

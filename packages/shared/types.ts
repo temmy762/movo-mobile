@@ -137,3 +137,16 @@ export type BookingMessage = {
   text: string;
   createdAt: string;
 };
+
+/* GET /api/driver/reserved — accepted scheduled rides not yet set off for */
+export type ReservedRide = {
+  id: string;
+  clientName: string;
+  pickup: string;
+  dropoff: string;
+  carName: string;
+  total: number;
+  earning: number;
+  scheduledAt: string | null;
+  paymentStatus: string;
+};

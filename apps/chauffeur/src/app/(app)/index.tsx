@@ -6,6 +6,7 @@
  * Location is shared while online (foreground + background, lib/location.ts).
  */
 import { useCallback, useEffect, useRef } from "react";
+import { useFocusEffect } from "expo-router";
 import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -56,6 +57,12 @@ export default function Home() {
   const safe = useSafeRide({ canOffer: canOfferSafeRide, onAccepted });
   const requests = useRideRequests({ online: shift.online && safe.phase === "idle", onAccepted });
   useEffect(() => { onStandardRide.current = requests.phase === "accepted"; }, [requests.phase]);
+
+  /* Back from Rides ("I'm heading to pickup" activates a reservation) */
+  const { phase: requestPhase, restoreActive } = requests;
+  useFocusEffect(useCallback(() => {
+    if ((requestPhase === "idle" || requestPhase === "searching") && safe.phase === "idle") restoreActive();
+  }, [requestPhase, restoreActive, safe.phase]));
 
   /* Earnings are credited when a Safe Ride part ends */
   useEffect(() => {
