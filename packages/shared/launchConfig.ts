@@ -23,6 +23,14 @@ export const HOURLY_CHARTER_ENABLED = false;
 /** Chauffeur vehicle rental (dashboard, onboarding option, admin, public site). */
 export const VEHICLE_RENTAL_ENABLED = false;
 
+/**
+ * In-City tiers customers can see and book (Oct 2026: Standard only).
+ * Customer-facing only — admin pricing, chauffeur vehicles and every tier's
+ * configuration are unchanged. Add "premium" / "black" back to show Executive
+ * and Concierge again.
+ */
+export const CUSTOMER_RIDE_TIERS: readonly ("classic" | "premium" | "black")[] = ["classic"];
+
 /** Drops a booking `mode` (airport / hourly) whose service is switched off. */
 export function allowedBookingMode(mode: string | null | undefined): string {
   if (mode === "airport") return AIRPORT_TRANSFER_ENABLED ? mode : "";
