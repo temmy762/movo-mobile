@@ -1,0 +1,31 @@
+{
+  "cli": {
+    "version": ">= 16.0.1",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "autoIncrement": true,
+      "environment": "development",
+      "android": { "buildType": "apk" },
+      "env": { "EXPO_PUBLIC_API_URL": "https://movoprive.com" }
+    },
+    "preview": {
+      "distribution": "internal",
+      "autoIncrement": true,
+      "environment": "preview",
+      "android": { "buildType": "apk" },
+      "env": { "EXPO_PUBLIC_API_URL": "https://movoprive.com" }
+    },
+    "production": {
+      "autoIncrement": true,
+      "environment": "production",
+      "env": { "EXPO_PUBLIC_API_URL": "https://movoprive.com" }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
