@@ -1,4 +1,4 @@
-import type { ApiDriver, MeResponse } from "@movo/shared";
+import type { ApiDriver, ApiUser, MeResponse } from "@movo/shared";
 import { request } from "../client";
 
 export const driverLogin = (email: string, password: string) =>
@@ -18,3 +18,17 @@ export const driverForgotPassword = (email: string) =>
 export const driverRegister = (body: {
   firstName: string; lastName: string; email: string; phone?: string; password: string; country: string; city: string;
 }) => request<{ driver: ApiDriver; token: string }>("/api/auth/driver/register", { body });
+
+/* ── Customers (riders) ── */
+
+export const login = (email: string, password: string) =>
+  request<{ user: ApiUser; token: string }>("/api/auth/login", { body: { email, password } });
+
+/* 409 = email or phone already used. Password: at least 8 characters. */
+export const register = (body: {
+  firstName: string; lastName: string; email: string; phone?: string; password: string; agreedToTerms: true;
+}) => request<{ user: ApiUser; token: string }>("/api/auth/register", { body });
+
+/* Always succeeds (the server doesn't reveal whether the email exists) */
+export const forgotPassword = (email: string) =>
+  request<{ success: true }>("/api/auth/forgot-password", { body: { email } });

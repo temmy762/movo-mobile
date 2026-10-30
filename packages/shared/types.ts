@@ -30,6 +30,8 @@ export type AppConfig = {
   launch: { safeRide: boolean; inCity: boolean; airport: boolean; hourly: boolean; rental: boolean };
   timeZone: string;
   currency: string;
+  /* Stripe's public key (live or test, matching the web) */
+  stripePublishableKey: string;
 };
 
 /** GET /api/driver/onboarding/status */
@@ -263,4 +265,51 @@ export type OnboardingRecord = Partial<Record<keyof OnboardingFields, string | n
   termsAcceptedAt?: string | null;
   contractSignedAt?: string | null;
   documents?: { type: OnboardingDocType; fileName: string }[];
+};
+
+/* ── Customer app ── */
+
+/* GET /api/user/bookings?tab=upcoming|past|canceled (latest 50) */
+export type UserBooking = {
+  id: string;
+  bookingNumber: string | null;
+  carName: string;
+  carTier: string | null;
+  pickup: string;
+  dropoff: string;
+  fare: number;
+  total: number;
+  status: string;
+  paymentStatus: string;
+  bookingType: string;
+  scheduledAt: string | null;
+  createdAt: string;
+};
+
+/* GET /api/user/profile */
+export type UserProfile = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phone: string | null;
+  createdAt: string;
+};
+
+/* GET /api/places/autocomplete (signed-in; Winnipeg-biased, Canada only) */
+export type PlaceSuggestion = { placeId: string; description: string; main: string; secondary: string };
+
+/* GET /api/bookings/estimate — `quote` is the server-signed price; payment and
+   booking creation only trust amounts inside it */
+export type FareEstimate = {
+  fare: number; serviceFee: number; gst: number; total: number;
+  additionalStopFee: number; airportFee: number;
+  distanceKm: number | null; durationMin: number | null;
+  gstRate: number; serviceFeeRate: number;
+  freeWaitingMinutes: number; waitingRatePerMin: number;
+  stops: number;
+  stopAddresses?: string[];
+  /* This customer's agreed price for a regular route (no service fee) */
+  fixedFare?: { label: string };
+  quote: string;
 };

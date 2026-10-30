@@ -6,3 +6,6 @@ export * as push from "./endpoints/push";
 export * as driver from "./endpoints/driver";
 export * as care from "./endpoints/care";
 export * as onboarding from "./endpoints/onboarding";
+export * as user from "./endpoints/user";
+export * as places from "./endpoints/places";
+export * as bookings from "./endpoints/bookings";
