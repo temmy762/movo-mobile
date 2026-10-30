@@ -235,11 +235,34 @@ export default function Ride() {
         {routeNotice && <Text style={[styles.notice, !routeNotice.startsWith("✓") && { color: "#dc2626" }]}>{routeNotice}</Text>}
 
         <View style={styles.between}>
-          <Text style={styles.small}>Total paid</Text>
+          <Text style={styles.small}>{r.paymentStatus === "REFUNDED" ? "Total (refunded)" : "Total paid"}</Text>
           <Text style={styles.total}>{money(r.total)}</Text>
         </View>
 
         {phase === "completed" && r.rating == null && <RateChauffeur id={id} name={d?.firstName} />}
+
+        {!live && (
+          <View style={{ gap: 10 }}>
+            {(r.paymentStatus === "PAID" || r.paymentStatus === "REFUNDED") && (
+              <Pressable onPress={() => router.push({ pathname: "/ride/receipt/[id]", params: { id } })} style={styles.action} accessibilityRole="button">
+                <Icon name="list" size={16} color={colors.navy} />
+                <Text style={styles.actionText}>View receipt</Text>
+              </Pressable>
+            )}
+            {phase === "completed" && (
+              <View style={styles.actions}>
+                <Pressable onPress={() => router.push({ pathname: "/ride/report/[id]", params: { id, kind: "issue", number: r.bookingNumber ?? "" } })}
+                  style={styles.action} accessibilityRole="button">
+                  <Text style={styles.actionText}>Report an issue</Text>
+                </Pressable>
+                <Pressable onPress={() => router.push({ pathname: "/ride/report/[id]", params: { id, kind: "lost", number: r.bookingNumber ?? "" } })}
+                  style={styles.action} accessibilityRole="button">
+                  <Text style={styles.actionText}>Report a lost item</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+        )}
 
         {canCancel(phase) && (
           <Pressable onPress={() => { setCancelError(null); setCancelOpen(true); }} style={styles.cancel} accessibilityRole="button">

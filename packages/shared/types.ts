@@ -357,3 +357,26 @@ export type RideDetail = {
 };
 
 export type DriverPosition = { lat: number; lng: number; heading?: number | null };
+
+/* GET /api/bookings/:id/receipt — dates already formatted (Winnipeg time) */
+export type Receipt = {
+  bookingId: string;
+  bookingNumber: string | null;
+  receiptNumber: string | null;
+  service: string;
+  status: string;
+  paymentStatus: string;
+  customerName: string;
+  customerEmail: string | null;
+  pickup: string;
+  dropoff: string;
+  stops: string[];
+  chauffeur: string | null;
+  vehicle: string | null;
+  bookedAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  items: { label: string; amount: number }[];
+  total: number;
+  card: string;
+};

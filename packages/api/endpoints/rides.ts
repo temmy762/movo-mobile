@@ -1,5 +1,5 @@
 /* A rider's own ride: tracking, cancel, chat, rating */
-import type { BookingMessage, DriverPosition, RideDetail } from "@movo/shared";
+import type { BookingMessage, DriverPosition, IncidentType, Receipt, RideDetail } from "@movo/shared";
 import { request } from "../client";
 
 export const detail = (id: string) => request<RideDetail>(`/api/bookings/${id}`);
@@ -52,3 +52,19 @@ export const addStop = (id: string, body: { stopAddress: string } | { confirmedI
 /* Same stops in a new travel order — no price change */
 export const reorderStops = (id: string, stops: string[]) =>
   request<{ ok: true; stops: string[] }>(`/api/bookings/${id}/stops`, { method: "PATCH", body: { stops } });
+
+/* ── After the ride ── */
+
+/* 404 = the ride wasn't paid (no receipt) */
+export const receipt = (id: string) => request<Receipt>(`/api/bookings/${id}/receipt`);
+
+/* Emails it to the account's email (at most once a minute per ride — 429) */
+export const emailReceipt = (id: string) =>
+  request<{ ok: true; sentTo: string }>(`/api/bookings/${id}/receipt`, { method: "POST" });
+
+/* Description: at least 10 characters */
+export const reportIncident = (body: { bookingId: string; type: IncidentType; description: string }) =>
+  request<unknown>("/api/incidents", { body });
+
+export const reportLostItem = (body: { bookingId: string; itemDescription: string; contactInfo?: string }) =>
+  request<unknown>("/api/lost-found", { body });
