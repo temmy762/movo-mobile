@@ -104,7 +104,7 @@ export function CityRideBooking({ initialDropoff }: { initialDropoff?: string })
 
   if (booked) {
     return (
-      <BookingDone title={booked.scheduledAt ? "Ride reserved" : "Ride booked"} bookingNumber={booked.bookingNumber}
+      <BookingDone bookingId={booked.id} title={booked.scheduledAt ? "Ride reserved" : "Ride booked"} bookingNumber={booked.bookingNumber}
         scheduledAt={booked.scheduledAt} nowText="We're finding your chauffeur now. You'll get an update as soon as one accepts." />
     );
   }

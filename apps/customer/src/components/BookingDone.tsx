@@ -6,8 +6,8 @@ import { router } from "expo-router";
 import { Icon, colors, fonts } from "@movo/ui";
 import { pickupLabel } from "@/lib/when";
 
-export function BookingDone({ title, bookingNumber, scheduledAt, nowText }: {
-  title: string; bookingNumber?: string | null; scheduledAt: string | null; nowText: string;
+export function BookingDone({ bookingId, title, bookingNumber, scheduledAt, nowText }: {
+  bookingId: string; title: string; bookingNumber?: string | null; scheduledAt: string | null; nowText: string;
 }) {
   return (
     <SafeAreaView style={styles.done}>
@@ -19,10 +19,13 @@ export function BookingDone({ title, bookingNumber, scheduledAt, nowText }: {
           ? `Your chauffeur will pick you up on ${pickupLabel(scheduledAt)}. We'll let you know when they're on the way.`
           : nowText}
       </Text>
-      <Pressable onPress={() => router.replace("/rides")} style={{ alignSelf: "stretch" }} accessibilityRole="button">
+      <Pressable onPress={() => router.replace({ pathname: "/ride/[id]", params: { id: bookingId } })} style={{ alignSelf: "stretch" }} accessibilityRole="button">
         <LinearGradient colors={["#1a1a2e", "#131936", "#C6BFB2"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.cta}>
-          <Text style={styles.ctaText}>View my rides</Text>
+          <Text style={styles.ctaText}>Track your ride</Text>
         </LinearGradient>
+      </Pressable>
+      <Pressable onPress={() => router.replace("/rides")} hitSlop={8} accessibilityRole="button">
+        <Text style={styles.secondary}>View my rides</Text>
       </Pressable>
     </SafeAreaView>
   );
@@ -36,4 +39,5 @@ const styles = StyleSheet.create({
   body: { fontFamily: fonts.body, fontSize: 14, color: "#6b7280", textAlign: "center", lineHeight: 20, marginBottom: 12 },
   cta: { minHeight: 52, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   ctaText: { fontFamily: fonts.bodySemi, fontSize: 16, color: "#fff" },
+  secondary: { fontFamily: fonts.bodySemi, fontSize: 13, color: colors.navy, marginTop: 6 },
 });

@@ -318,3 +318,42 @@ export type FareEstimate = {
 export type SafeRideVehicle = {
   make: string; model: string; year: string; colour: string; plate: string; transmission: "Automatic" | "Manual";
 };
+
+/* GET /api/bookings/:id (as the rider). For Safe Ride `driver` is the PRIMARY
+   chauffeur once one accepts. */
+export type RideDetail = {
+  id: string;
+  bookingNumber: string | null;
+  bookingType: string;
+  status: string;
+  paymentStatus: string;
+  carName: string;
+  pickup: string;
+  dropoff: string;
+  stops?: unknown;
+  pickupLat: number | null;
+  pickupLng: number | null;
+  dropoffLat: number | null;
+  dropoffLng: number | null;
+  total: number;
+  fare: number;
+  gst: number;
+  scheduledAt: string | null;
+  enRouteAt: string | null;
+  arrivedAt: string | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  cancelledAt: string | null;
+  cancelledBy: string | null;
+  createdAt: string;
+  rating: number | null;
+  driver: {
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+    avgRating: number | null;
+    vehicle: { photoUrl: string | null; make: string; model: string; year: number | null; plate: string } | null;
+  } | null;
+};
+
+export type DriverPosition = { lat: number; lng: number; heading?: number | null };

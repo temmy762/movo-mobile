@@ -199,7 +199,7 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
 
   if (bookedId) {
     return (
-      <BookingDone title={scheduledAt ? "Safe Ride reserved" : "Safe Ride booked"} scheduledAt={scheduledAt}
+      <BookingDone bookingId={bookedId} title={scheduledAt ? "Safe Ride reserved" : "Safe Ride booked"} scheduledAt={scheduledAt}
         nowText="We're assigning your chauffeur now. A confirmation is on its way to your email, and you'll get an update as soon as a chauffeur accepts." />
     );
   }

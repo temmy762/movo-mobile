@@ -7,9 +7,10 @@ export default function AppTabs() {
   /* Signed in: this phone receives the rider's ride updates */
   useEffect(() => { registerForPush(); }, []);
 
-  /* A ride update opens Rides, where the current trip is listed first */
+  /* A ride update opens that ride */
   useEffect(() => onNotificationTap((data) => {
-    router.navigate(data.bookingId ? "/rides" : "/");
+    if (data.bookingId) router.navigate({ pathname: "/ride/[id]", params: { id: data.bookingId } });
+    else router.navigate("/");
   }), []);
 
   return (

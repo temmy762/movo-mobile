@@ -47,6 +47,8 @@ export default function RootLayout() {
           <Stack.Protected guard={signedIn} redirectTo="/sign-in">
             <Stack.Screen name="(app)" />
             <Stack.Screen name="book" />
+            <Stack.Screen name="ride/[id]" />
+            <Stack.Screen name="ride/chat/[id]" />
           </Stack.Protected>
         </Stack>
       </SocketProvider>

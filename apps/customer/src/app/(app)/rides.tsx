@@ -6,7 +6,7 @@ import { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
-import { useFocusEffect } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { user as userApi } from "@movo/api";
 import type { UserBooking } from "@movo/shared";
@@ -43,7 +43,8 @@ const when = (iso: string) =>
 function RideCard({ ride }: { ride: UserBooking }) {
   const care = ride.bookingType === "CARE";
   return (
-    <View style={styles.card}>
+    <Pressable onPress={() => router.push({ pathname: "/ride/[id]", params: { id: ride.id } })}
+      style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]} accessibilityRole="button">
       <View style={{ flex: 1, gap: 4 }}>
         <Text style={styles.car}>{care ? "Safe Ride" : ride.carName}</Text>
         <Text style={styles.route} numberOfLines={2}>{ride.pickup} → {ride.dropoff}</Text>
@@ -56,7 +57,7 @@ function RideCard({ ride }: { ride: UserBooking }) {
         {!ride.scheduledAt && <Text style={styles.small}>Booked {when(ride.createdAt)}</Text>}
       </View>
       <Image source={care ? IMAGES.care : IMAGES.city} style={styles.img} contentFit="contain" />
-    </View>
+    </Pressable>
   );
 }
 
