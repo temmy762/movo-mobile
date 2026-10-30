@@ -5,7 +5,7 @@
  * today's stats.
  * Location is shared while online (foreground + background, lib/location.ts).
  */
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { driver as driverApi } from "@movo/api";
-import { winnipegNowTime, type DriverBooking } from "@movo/shared";
+import { SOCKET_EVENTS, winnipegNowTime, type DriverBooking } from "@movo/shared";
 import { Icon, fonts, colors } from "@movo/ui";
 import { useSession } from "@/lib/session";
 import { useShift } from "@/lib/shift";
@@ -39,7 +39,7 @@ function whenLabel(iso: string) {
 export default function Home() {
   const driver = useSession((s) => s.driver);
   const shift = useShift();
-  const { join } = useSocket();
+  const { join, on } = useSocket();
   const queryClient = useQueryClient();
 
   const stats = useQuery({ queryKey: ["driver-stats"], queryFn: driverApi.stats });
@@ -99,6 +99,27 @@ export default function Home() {
   }
   if (ride?.dropoffLat != null && ride.dropoffLng != null) {
     pins.push({ kind: "dropoff", title: "Drop-off", coordinate: { latitude: ride.dropoffLat, longitude: ride.dropoffLng } });
+  }
+
+  /* The rider's live position while heading to pickup (they share it from
+     the customer app / web); gone once the trip starts */
+  const rideId = ride?.id;
+  const [rider, setRider] = useState<{ bookingId: string; lat: number; lng: number } | null>(null);
+  useEffect(() => {
+    if (!rideId) return;
+    const offLoc = on(SOCKET_EVENTS.RIDER_LOCATION, (data) => {
+      const d = data as { bookingId?: string; lat?: number; lng?: number };
+      if (d.bookingId === rideId && typeof d.lat === "number" && typeof d.lng === "number") {
+        setRider({ bookingId: rideId, lat: d.lat, lng: d.lng });
+      }
+    });
+    const offStart = on(SOCKET_EVENTS.TRIP_STARTED, (data) => {
+      if ((data as { bookingId?: string }).bookingId === rideId) setRider(null);
+    });
+    return () => { offLoc(); offStart(); };
+  }, [rideId, on]);
+  if (rider && rider.bookingId === rideId) {
+    pins.push({ kind: "rider", title: "Your rider", coordinate: { latitude: rider.lat, longitude: rider.lng } });
   }
 
   return (

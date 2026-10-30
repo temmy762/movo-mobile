@@ -11,6 +11,7 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import MapView, { Marker, type LatLng } from "react-native-maps";
+import * as Location from "expo-location";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, rides } from "@movo/api";
 import { SOCKET_EVENTS, type DriverPosition } from "@movo/shared";
@@ -73,6 +74,30 @@ export default function Ride() {
 
   /* Starting position once a chauffeur is on the job */
   const hasDriver = !!r?.driver;
+
+  /* While the chauffeur heads to (or waits at) the pickup, share the rider's
+     position every 5 s so they can find them — as on the web. Stops when the
+     trip starts or this screen closes. */
+  const sharing = phase === "on_the_way" || phase === "arrived";
+  const [locationShared, setLocationShared] = useState(false);
+  useEffect(() => {
+    if (!sharing) return;
+    let sub: Location.LocationSubscription | null = null;
+    let cancelled = false;
+    (async () => {
+      const perm = await Location.requestForegroundPermissionsAsync();
+      if (cancelled || perm.status !== "granted") return;
+      sub = await Location.watchPositionAsync(
+        { accuracy: Location.Accuracy.High, timeInterval: 5_000, distanceInterval: 10 },
+        (pos) => {
+          setLocationShared(true);
+          rides.shareLocation(id, pos.coords.latitude, pos.coords.longitude).catch(() => {});
+        },
+      );
+      if (cancelled) sub.remove();
+    })().catch(() => {});
+    return () => { cancelled = true; sub?.remove(); };
+  }, [sharing, id]);
   useEffect(() => {
     if (!hasDriver || !live) return;
     rides.driverLocation(id).then((d) => { if (d.position) setPosition(d.position); }).catch(() => {});
@@ -167,6 +192,9 @@ export default function Ride() {
         </View>
         <Text style={styles.title}>{h.title}</Text>
         <Text style={styles.body}>{h.body}</Text>
+        {sharing && locationShared && (
+          <Text style={styles.small}>Your chauffeur can see your location until pickup, to help them find you.</Text>
+        )}
 
         {d && live && (
           <View style={styles.driver}>

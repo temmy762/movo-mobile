@@ -68,3 +68,8 @@ export const reportIncident = (body: { bookingId: string; type: IncidentType; de
 
 export const reportLostItem = (body: { bookingId: string; itemDescription: string; contactInfo?: string }) =>
   request<unknown>("/api/lost-found", { body });
+
+/* While the chauffeur heads to pickup: the rider's live position, relayed to
+   the chauffeur (ignored once the trip has started) */
+export const shareLocation = (id: string, lat: number, lng: number) =>
+  request<{ ok: true }>(`/api/bookings/${id}/rider-location`, { body: { lat, lng } });

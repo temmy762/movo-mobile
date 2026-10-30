@@ -1,6 +1,7 @@
 /**
  * Map on Home (the web home's map): the chauffeur's own position, and during
- * a ride the pickup / drop-off pins, framed together. Google Maps on Android
+ * a ride the pickup / drop-off pins, framed together, plus the rider's live
+ * position while heading to pickup (it moves; the map doesn't re-frame). Google Maps on Android
  * (key from app.config.js), Apple Maps on iOS.
  */
 import { useEffect, useRef } from "react";
@@ -9,7 +10,7 @@ import MapView, { Marker, type LatLng } from "react-native-maps";
 import { colors } from "@movo/ui";
 import { dark } from "./homeKit";
 
-export type MapPin = { coordinate: LatLng; kind: "pickup" | "dropoff"; title: string };
+export type MapPin = { coordinate: LatLng; kind: "pickup" | "dropoff" | "rider"; title: string };
 
 const WINNIPEG = { latitude: 49.8951, longitude: -97.1384, latitudeDelta: 0.12, longitudeDelta: 0.12 };
 
@@ -29,7 +30,8 @@ export function HomeMap({ pins, height = 220 }: { pins: MapPin[]; height?: numbe
   const map = useRef<MapView>(null);
   const centred = useRef(false);
   const me = useRef<LatLng | null>(null);
-  const key = pins.map((p) => `${p.coordinate.latitude},${p.coordinate.longitude}`).join("|");
+  /* Re-frame for the ride's fixed pins only — the rider's position moves */
+  const key = pins.filter((p) => p.kind !== "rider").map((p) => `${p.coordinate.latitude},${p.coordinate.longitude}`).join("|");
 
   const frame = () => {
     const points = [...pins.map((p) => p.coordinate), ...(me.current ? [me.current] : [])];
@@ -65,7 +67,11 @@ export function HomeMap({ pins, height = 220 }: { pins: MapPin[]; height?: numbe
           }
         }}
       >
-        {pins.map((p) => (
+        {pins.map((p) => p.kind === "rider" ? (
+          <Marker key="rider" coordinate={p.coordinate} title={p.title} anchor={{ x: 0.5, y: 0.5 }}>
+            <View style={styles.rider}><View style={styles.riderDot} /></View>
+          </Marker>
+        ) : (
           <Marker key={`${p.kind}-${p.coordinate.latitude}`} coordinate={p.coordinate} title={p.title}
             pinColor={p.kind === "pickup" ? colors.navy : "#ef4444"} />
         ))}
@@ -75,5 +81,7 @@ export function HomeMap({ pins, height = 220 }: { pins: MapPin[]; height?: numbe
 }
 
 const styles = StyleSheet.create({
+  rider: { width: 24, height: 24, borderRadius: 12, backgroundColor: "rgba(34,197,94,0.25)", alignItems: "center", justifyContent: "center" },
+  riderDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: "#22c55e", borderWidth: 2, borderColor: "#fff" },
   wrap: { borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: dark.cardBorder, backgroundColor: dark.card },
 });
