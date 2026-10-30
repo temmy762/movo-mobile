@@ -10,3 +10,4 @@ export * as user from "./endpoints/user";
 export * as places from "./endpoints/places";
 export * as bookings from "./endpoints/bookings";
 export * as rides from "./endpoints/rides";
+export * as payments from "./endpoints/payments";

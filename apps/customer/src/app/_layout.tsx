@@ -51,6 +51,7 @@ export default function RootLayout() {
             <Stack.Screen name="ride/chat/[id]" />
             <Stack.Screen name="ride/receipt/[id]" />
             <Stack.Screen name="ride/report/[id]" />
+            <Stack.Screen name="payment-methods" />
           </Stack.Protected>
         </Stack>
       </SocketProvider>

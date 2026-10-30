@@ -380,3 +380,6 @@ export type Receipt = {
   total: number;
   card: string;
 };
+
+/* GET /api/stripe/payment-methods — the rider's saved cards */
+export type SavedCard = { id: string; brand: string; last4: string; expMonth: number; expYear: number };

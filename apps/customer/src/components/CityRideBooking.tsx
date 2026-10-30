@@ -15,6 +15,7 @@ import { useSession } from "@/lib/session";
 import { payForQuote } from "@/lib/pay";
 import { LEAD_MIN, dayOptions, pickupLabel, timeOptions } from "@/lib/when";
 import { AddressSearch } from "./AddressSearch";
+import { CardPicker } from "./CardPicker";
 import { BookingDone } from "./BookingDone";
 import { ScreenHeader } from "./ScreenHeader";
 
@@ -41,6 +42,8 @@ export function CityRideBooking({ initialDropoff }: { initialDropoff?: string })
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paidIntent, setPaidIntent] = useState<string | null>(null);
+  /* Saved card id, null = new card, undefined = not chosen yet */
+  const [cardId, setCardId] = useState<string | null | undefined>(undefined);
   const [booked, setBooked] = useState<Booked | null>(null);
 
   const times = reserve ? timeOptions(day, LEAD_MIN.city) : [];
@@ -85,7 +88,7 @@ export function CityRideBooking({ initialDropoff }: { initialDropoff?: string })
     let intentId = paidIntent;
     try {
       if (!intentId) {
-        const result = await payForQuote(estimate.quote, { name: `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim(), email: user?.email });
+        const result = await payForQuote(estimate.quote, { name: `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim(), email: user?.email }, cardId);
         if (result.status === "canceled") return;
         intentId = result.intentId;
         setPaidIntent(intentId);
@@ -195,6 +198,7 @@ export function CityRideBooking({ initialDropoff }: { initialDropoff?: string })
             </View>
           )}
 
+          {estimate && !paidIntent && <CardPicker value={cardId} onChange={setCardId} />}
           {error && <Text style={styles.error}>{error}</Text>}
 
           <Pressable onPress={estimate ? pay : getPrice} disabled={loading || paying} accessibilityRole="button">

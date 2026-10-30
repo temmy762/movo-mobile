@@ -5,6 +5,7 @@
 import { useState, type ReactNode } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { ApiError, user as userApi } from "@movo/api";
 import { Card, Icon, type IconName, colors, fontSizes, fonts, spacing } from "@movo/ui";
@@ -71,6 +72,10 @@ export default function Profile() {
           {(p ?? user)?.email ? <Text style={styles.detail}>{(p ?? user)?.email}</Text> : null}
           {p?.phone ? <Text style={styles.detail}>{p.phone}</Text> : null}
         </Card>
+
+        <Section title="Payments">
+          <Row icon="wallet" label="Payment methods" onPress={() => router.push("/payment-methods")} />
+        </Section>
 
         <Section title="Support">
           <Row icon="mail" label="Contact support" onPress={() => emailSupport()} />

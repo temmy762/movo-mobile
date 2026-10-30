@@ -21,6 +21,7 @@ import { payForQuote } from "@/lib/pay";
 import { openWeb } from "@/lib/links";
 import { LEAD_MIN, dayOptions, pickupLabel, timeOptions } from "@/lib/when";
 import { AddressSearch } from "./AddressSearch";
+import { CardPicker } from "./CardPicker";
 import { BookingDone } from "./BookingDone";
 
 const MAKES = [
@@ -123,6 +124,8 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
   const [estimate, setEstimate] = useState<FareEstimate | null>(null);
   const [busy, setBusy] = useState(false);
   const [paidIntent, setPaidIntent] = useState<string | null>(null);
+  /* Saved card id, null = new card, undefined = not chosen yet */
+  const [cardId, setCardId] = useState<string | null | undefined>(undefined);
   const [bookedId, setBookedId] = useState<string | null>(null);
 
   const toggleSomeoneElse = (v: boolean) => {
@@ -175,7 +178,7 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
     let intentId = paidIntent;
     try {
       if (!intentId) {
-        const result = await payForQuote(estimate.quote, { name: self.name, email: receiptEmail.trim() });
+        const result = await payForQuote(estimate.quote, { name: self.name, email: receiptEmail.trim() }, cardId);
         if (result.status === "canceled") return;
         intentId = result.intentId;
         setPaidIntent(intentId);
@@ -356,6 +359,7 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
             </>
           )}
 
+          {step === 4 && !paidIntent && <CardPicker value={cardId} onChange={setCardId} />}
           {error && <Text style={styles.error}>{error}</Text>}
 
           <Pressable onPress={step === 1 ? next1 : step === 2 ? next2 : step === 3 ? next3 : pay} disabled={busy} accessibilityRole="button">

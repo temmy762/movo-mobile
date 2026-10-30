@@ -7,7 +7,7 @@
  */
 import * as Linking from "expo-linking";
 import { handleNextAction, initPaymentSheet, initStripe, presentPaymentSheet, PaymentSheetError } from "@stripe/stripe-react-native";
-import { app as appApi, bookings as bookingsApi } from "@movo/api";
+import { app as appApi, bookings as bookingsApi, payments } from "@movo/api";
 
 let stripeReady: Promise<void> | null = null;
 
@@ -21,9 +21,15 @@ function ensureStripe(): Promise<void> {
 
 export type PayResult = { status: "paid"; intentId: string } | { status: "canceled" };
 
-/** Charges exactly the quoted total. Throws with a message the rider can read. */
-export async function payForQuote(quote: string, billing: { name?: string; email?: string | null }): Promise<PayResult> {
+/**
+ * Charges exactly the quoted total — with a saved card (`savedCardId`) or a
+ * new one in the PaymentSheet. Throws with a message the rider can read.
+ */
+export async function payForQuote(
+  quote: string, billing: { name?: string; email?: string | null }, savedCardId?: string | null,
+): Promise<PayResult> {
   await ensureStripe();
+  if (savedCardId) return payWithSavedCard(quote, savedCardId);
   const { clientSecret, id } = await bookingsApi.createPaymentIntent(quote);
 
   const init = await initPaymentSheet({
@@ -48,4 +54,36 @@ export async function confirmExtraCharge(clientSecret: string): Promise<void> {
   await ensureStripe();
   const { error } = await handleNextAction(clientSecret, Linking.createURL("stripe-redirect"));
   if (error) throw new Error(error.message || "Card authentication failed");
+}
+
+/* A saved card, on-session: a 3D Secure check pops up here if the bank asks */
+async function payWithSavedCard(quote: string, cardId: string): Promise<PayResult> {
+  const charge = await payments.chargeSaved(quote, cardId);
+  if (charge.status === "succeeded") return { status: "paid", intentId: charge.id };
+  if (charge.status === "requires_action" && charge.clientSecret) {
+    const { paymentIntent, error } = await handleNextAction(charge.clientSecret, Linking.createURL("stripe-redirect"));
+    if (error) throw new Error(error.message || "Card authentication failed");
+    if (String(paymentIntent.status).toLowerCase() === "succeeded") return { status: "paid", intentId: charge.id };
+  }
+  throw new Error("Your payment didn't go through. Please try another card.");
+}
+
+/** Saves a new card to the rider's account (no charge). false = the rider closed the sheet. */
+export async function addCard(billing: { name?: string; email?: string | null }): Promise<boolean> {
+  await ensureStripe();
+  const { clientSecret } = await payments.setupIntent();
+  const init = await initPaymentSheet({
+    merchantDisplayName: "Movo Privé",
+    setupIntentClientSecret: clientSecret,
+    returnURL: Linking.createURL("stripe-redirect"),
+    defaultBillingDetails: { name: billing.name, email: billing.email ?? undefined, address: { country: "CA" } },
+    appearance: { colors: { primary: "#131936" } },
+  });
+  if (init.error) throw new Error(init.error.message || "Couldn't open the card form. Please try again.");
+  const saved = await presentPaymentSheet();
+  if (saved.error) {
+    if (saved.error.code === PaymentSheetError.Canceled) return false;
+    throw new Error(saved.error.message || "Your card couldn't be saved. Please try again.");
+  }
+  return true;
 }
