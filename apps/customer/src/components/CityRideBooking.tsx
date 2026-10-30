@@ -8,14 +8,14 @@ import { useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
 import { ApiError, bookings as bookingsApi } from "@movo/api";
 import { CUSTOMER_RIDE_TIERS, winnipegDateTime, type FareEstimate } from "@movo/shared";
-import { Icon, colors, fonts } from "@movo/ui";
+import { colors, fonts } from "@movo/ui";
 import { useSession } from "@/lib/session";
 import { payForQuote } from "@/lib/pay";
 import { LEAD_MIN, dayOptions, pickupLabel, timeOptions } from "@/lib/when";
 import { AddressSearch } from "./AddressSearch";
+import { BookingDone } from "./BookingDone";
 import { ScreenHeader } from "./ScreenHeader";
 
 const TIER_NAMES: Record<string, string> = { classic: "Standard", premium: "Executive", black: "Concierge" };
@@ -46,8 +46,12 @@ export function CityRideBooking({ initialDropoff }: { initialDropoff?: string })
   const times = reserve ? timeOptions(day, LEAD_MIN.city) : [];
   const scheduledAt = reserve && time ? winnipegDateTime(day, time)?.toISOString() ?? null : null;
 
-  /* Anything that changes the trip invalidates the price */
-  const changed = <T,>(set: (v: T) => void) => (v: T) => { set(v); setEstimate(null); setError(null); };
+  /* Anything that changes the trip invalidates the price — and once paid, the
+     trip is fixed (the payment covers exactly this quote) */
+  const changed = <T,>(set: (v: T) => void) => (v: T) => {
+    if (paidIntent) return;
+    set(v); setEstimate(null); setError(null);
+  };
 
   const getPrice = async () => {
     setError(null);
@@ -100,21 +104,8 @@ export function CityRideBooking({ initialDropoff }: { initialDropoff?: string })
 
   if (booked) {
     return (
-      <SafeAreaView style={[styles.screen, styles.done]}>
-        <LinearGradient colors={["#131936", "#C6BFB2"]} style={styles.doneBadge}><Icon name="check" size={30} color="#fff" strokeWidth={2.5} /></LinearGradient>
-        <Text style={styles.doneTitle}>{booked.scheduledAt ? "Ride reserved" : "Ride booked"}</Text>
-        {booked.bookingNumber ? <Text style={styles.doneRef}>{booked.bookingNumber}</Text> : null}
-        <Text style={styles.doneBody}>
-          {booked.scheduledAt
-            ? `Your chauffeur will pick you up on ${pickupLabel(booked.scheduledAt)}. We'll let you know when they're on the way.`
-            : "We're finding your chauffeur now. You'll get an update as soon as one accepts."}
-        </Text>
-        <Pressable onPress={() => router.replace("/rides")} style={{ alignSelf: "stretch" }} accessibilityRole="button">
-          <LinearGradient colors={["#1a1a2e", "#131936", "#C6BFB2"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.cta}>
-            <Text style={styles.ctaText}>View my rides</Text>
-          </LinearGradient>
-        </Pressable>
-      </SafeAreaView>
+      <BookingDone title={booked.scheduledAt ? "Ride reserved" : "Ride booked"} bookingNumber={booked.bookingNumber}
+        scheduledAt={booked.scheduledAt} nowText="We're finding your chauffeur now. You'll get an update as soon as one accepts." />
     );
   }
 
@@ -259,9 +250,4 @@ const styles = StyleSheet.create({
   error: { fontFamily: fonts.body, fontSize: 12, color: "#dc2626", textAlign: "center" },
   cta: { minHeight: 52, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   ctaText: { fontFamily: fonts.bodySemi, fontSize: 16, color: "#fff" },
-  done: { alignItems: "center", justifyContent: "center", padding: 24, gap: 10 },
-  doneBadge: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center", marginBottom: 6 },
-  doneTitle: { fontFamily: fonts.heading, fontSize: 20, color: "#111827" },
-  doneRef: { fontFamily: fonts.bodySemi, fontSize: 13, color: colors.navy },
-  doneBody: { fontFamily: fonts.body, fontSize: 14, color: "#6b7280", textAlign: "center", lineHeight: 20, marginBottom: 12 },
 });

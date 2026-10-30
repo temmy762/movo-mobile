@@ -1,4 +1,4 @@
-import type { FareEstimate } from "@movo/shared";
+import type { FareEstimate, SafeRideVehicle } from "@movo/shared";
 import { request } from "../client";
 
 /* City Ride price for one tier. pickupTime (ISO) matters for fixed fares. */
@@ -20,3 +20,11 @@ export const createCityRide = (body: {
   pickup: string; dropoff: string; scheduledAt?: string | null; stops?: string[];
   riderName?: string; riderPhone?: string; passengers?: number;
 }) => request<{ id: string; bookingNumber?: string | null }>("/api/bookings", { body });
+
+/* After payment: the Safe Ride booking (the chauffeurs are dispatched from it).
+   Retrying with the same intent returns the existing booking. */
+export const createSafeRide = (body: {
+  quote: string; stripePaymentIntentId: string; pickup: string; dropoff: string; scheduledAt?: string | null;
+  vehicle: SafeRideVehicle; riderName: string; riderPhone: string; receiptEmail: string;
+  passengers?: number; pickupInstructions?: string; stops?: string[];
+}) => request<{ bookingId: string }>("/api/bookings/care", { body });

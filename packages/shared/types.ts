@@ -313,3 +313,8 @@ export type FareEstimate = {
   fixedFare?: { label: string };
   quote: string;
 };
+
+/* The customer's own vehicle, Safe Ride step 2 (POST /api/bookings/care `vehicle`) */
+export type SafeRideVehicle = {
+  make: string; model: string; year: string; colour: string; plate: string; transmission: "Automatic" | "Manual";
+};
