@@ -24,3 +24,31 @@ export const sendMessage = (id: string, text: string) =>
 /* Feedback is required for 3 stars or lower */
 export const rate = (id: string, rating: number, review: string | null) =>
   request<unknown>(`/api/bookings/${id}/rating`, { body: { rating, review } });
+
+/* ── Route changes during a ride (until it's completed or cancelled) ──
+   Price first (nothing is charged), then confirm: only increases are charged
+   to the rider's saved card. If the bank asks for 3D Secure the response is
+   { requiresAction, clientSecret, intentId } — confirm it, then call again
+   with confirmedIntentId to apply exactly what was charged. */
+
+export type RouteQuote = { charge: number; newTotal: number; routed?: boolean };
+export type RouteChange =
+  | { ok: true; charged: number; booking?: { dropoff?: string; stops?: unknown } }
+  | { requiresAction: true; clientSecret: string; intentId: string; charge: number };
+
+export const priceDestination = (id: string, dropoff: string) =>
+  request<RouteQuote>(`/api/bookings/${id}/destination`, { body: { dropoff, quoteOnly: true } });
+
+export const changeDestination = (id: string, body: { dropoff: string } | { confirmedIntentId: string }) =>
+  request<RouteChange>(`/api/bookings/${id}/destination`, { body });
+
+/* Up to 3 stops */
+export const priceStop = (id: string, stopAddress: string) =>
+  request<RouteQuote>(`/api/bookings/${id}/add-stop`, { body: { stopAddress, quoteOnly: true } });
+
+export const addStop = (id: string, body: { stopAddress: string } | { confirmedIntentId: string }) =>
+  request<RouteChange>(`/api/bookings/${id}/add-stop`, { body });
+
+/* Same stops in a new travel order — no price change */
+export const reorderStops = (id: string, stops: string[]) =>
+  request<{ ok: true; stops: string[] }>(`/api/bookings/${id}/stops`, { method: "PATCH", body: { stops } });

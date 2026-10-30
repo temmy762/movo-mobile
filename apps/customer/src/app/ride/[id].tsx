@@ -16,6 +16,7 @@ import { ApiError, rides } from "@movo/api";
 import { SOCKET_EVENTS, type DriverPosition } from "@movo/shared";
 import { Icon, colors, fonts } from "@movo/ui";
 import { useSocket } from "@/lib/socket";
+import { RouteChangeSheet } from "@/components/RouteChangeSheet";
 import { canCancel, cancelPolicy, headline, isLive, ridePhase, type RidePhase } from "@/lib/ridePhase";
 
 const POLL_MS = 8_000;
@@ -44,6 +45,8 @@ export default function Ride() {
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [cancelResult, setCancelResult] = useState<string | null>(null);
+  const [routeSheet, setRouteSheet] = useState<"destination" | "stop" | null>(null);
+  const [routeNotice, setRouteNotice] = useState<string | null>(null);
 
   const ride = useQuery({
     queryKey: ["ride", id],
@@ -127,6 +130,19 @@ export default function Ride() {
   const d = r.driver;
   const stops = stopsOf(r.stops);
 
+  /* Same stops, new travel order — no price change */
+  const moveStop = async (from: number, to: number) => {
+    const next = [...stops];
+    [next[from], next[to]] = [next[to], next[from]];
+    setRouteNotice(null);
+    try {
+      await rides.reorderStops(id, next);
+      queryClient.invalidateQueries({ queryKey: ["ride", id] });
+    } catch (e) {
+      setRouteNotice(e instanceof ApiError && e.status !== 0 ? e.message : "Couldn't reorder the stops.");
+    }
+  };
+
   return (
     <View style={styles.screen}>
       <MapView ref={map} style={styles.map} initialRegion={WINNIPEG} showsUserLocation={live} toolbarEnabled={false}>
@@ -184,10 +200,39 @@ export default function Ride() {
         <View style={styles.route}>
           <View style={styles.routeRow}><View style={[styles.dot, { backgroundColor: colors.navy }]} /><Text style={styles.routeText}>{r.pickup}</Text></View>
           {stops.map((s, i) => (
-            <View key={`${i}-${s}`} style={styles.routeRow}><View style={[styles.dot, { backgroundColor: "#9ca3af" }]} /><Text style={styles.routeText}>Stop {i + 1}: {s}</Text></View>
+            <View key={`${i}-${s}`} style={styles.routeRow}>
+              <View style={[styles.dot, { backgroundColor: "#9ca3af" }]} />
+              <Text style={styles.routeText}>Stop {i + 1}: {s}</Text>
+              {live && stops.length > 1 && (
+                <View style={styles.reorder}>
+                  <Pressable onPress={() => moveStop(i, i - 1)} disabled={i === 0} hitSlop={6} accessibilityLabel={`Move stop ${i + 1} earlier`}>
+                    <Text style={[styles.arrow, i === 0 && { opacity: 0.25 }]}>↑</Text>
+                  </Pressable>
+                  <Pressable onPress={() => moveStop(i, i + 1)} disabled={i === stops.length - 1} hitSlop={6} accessibilityLabel={`Move stop ${i + 1} later`}>
+                    <Text style={[styles.arrow, i === stops.length - 1 && { opacity: 0.25 }]}>↓</Text>
+                  </Pressable>
+                </View>
+              )}
+            </View>
           ))}
           <View style={styles.routeRow}><View style={[styles.dot, { backgroundColor: "#ef4444" }]} /><Text style={styles.routeText}>{r.dropoff}</Text></View>
         </View>
+
+        {live && (
+          <View style={styles.actions}>
+            <Pressable onPress={() => setRouteSheet("destination")} style={styles.action} accessibilityRole="button">
+              <Icon name="navigation" size={16} color={colors.navy} />
+              <Text style={styles.actionText}>Change destination</Text>
+            </Pressable>
+            {stops.length < 3 && (
+              <Pressable onPress={() => setRouteSheet("stop")} style={styles.action} accessibilityRole="button">
+                <Text style={styles.plus}>+</Text>
+                <Text style={styles.actionText}>Add a stop</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
+        {routeNotice && <Text style={[styles.notice, !routeNotice.startsWith("✓") && { color: "#dc2626" }]}>{routeNotice}</Text>}
 
         <View style={styles.between}>
           <Text style={styles.small}>Total paid</Text>
@@ -205,6 +250,18 @@ export default function Ride() {
           <Text style={[styles.small, { textAlign: "center" }]}>Need help during your trip? Contact support@movoprive.com.</Text>
         )}
       </ScrollView>
+
+      {routeSheet && (
+        <RouteChangeSheet bookingId={id} kind={routeSheet} currentDropoff={r.dropoff}
+          onClose={() => setRouteSheet(null)}
+          onDone={(charged) => {
+            setRouteNotice(charged > 0
+              ? `✓ ${money(charged)} charged. Your chauffeur has been told about the new route.`
+              : "✓ Route updated. Your chauffeur has been told.");
+            setRouteSheet(null);
+            queryClient.invalidateQueries({ queryKey: ["ride", id] });
+          }} />
+      )}
 
       <Modal visible={cancelOpen} transparent animationType="fade" onRequestClose={() => setCancelOpen(false)}>
         <View style={styles.overlay}>
@@ -317,6 +374,13 @@ const styles = StyleSheet.create({
   dot: { width: 10, height: 10, borderRadius: 5, marginTop: 4 },
   routeText: { flex: 1, fontFamily: fonts.body, fontSize: 13, color: "#374151", lineHeight: 18 },
   total: { fontFamily: fonts.heading, fontSize: 16, color: "#111827" },
+  reorder: { flexDirection: "row", gap: 12, paddingLeft: 6 },
+  arrow: { fontFamily: fonts.heading, fontSize: 16, color: colors.navy },
+  actions: { flexDirection: "row", gap: 10 },
+  action: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12, borderRadius: 14, borderWidth: 1, borderColor: "#e5e7eb", backgroundColor: "#fff" },
+  actionText: { fontFamily: fonts.bodySemi, fontSize: 13, color: colors.navy },
+  plus: { fontFamily: fonts.heading, fontSize: 18, color: colors.navy, marginTop: -2 },
+  notice: { fontFamily: fonts.bodySemi, fontSize: 12, color: "#15803d", lineHeight: 17 },
   cancel: { paddingVertical: 13, borderRadius: 14, borderWidth: 1, borderColor: "#fecaca", backgroundColor: "#fef2f2", alignItems: "center" },
   cancelText: { fontFamily: fonts.bodySemi, fontSize: 14, color: "#dc2626" },
   overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", padding: 24 },

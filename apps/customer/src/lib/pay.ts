@@ -6,7 +6,7 @@
  * live / test mode as the web.
  */
 import * as Linking from "expo-linking";
-import { initPaymentSheet, initStripe, presentPaymentSheet, PaymentSheetError } from "@stripe/stripe-react-native";
+import { handleNextAction, initPaymentSheet, initStripe, presentPaymentSheet, PaymentSheetError } from "@stripe/stripe-react-native";
 import { app as appApi, bookings as bookingsApi } from "@movo/api";
 
 let stripeReady: Promise<void> | null = null;
@@ -41,4 +41,11 @@ export async function payForQuote(quote: string, billing: { name?: string; email
     throw new Error(paid.error.message || "Your payment didn't go through. Please try again.");
   }
   return { status: "paid", intentId: id };
+}
+
+/** A mid-ride charge (new destination / stop) the bank wants confirmed (3D Secure) */
+export async function confirmExtraCharge(clientSecret: string): Promise<void> {
+  await ensureStripe();
+  const { error } = await handleNextAction(clientSecret, Linking.createURL("stripe-redirect"));
+  if (error) throw new Error(error.message || "Card authentication failed");
 }
