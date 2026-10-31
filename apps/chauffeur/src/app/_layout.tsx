@@ -57,6 +57,7 @@ export default function RootLayout() {
             <Stack.Screen name="vehicle" />
             <Stack.Screen name="report-incident" />
             <Stack.Screen name="report-found-item" />
+            <Stack.Screen name="notifications" />
           </Stack.Protected>
         </Stack>
       </SocketProvider>

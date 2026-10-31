@@ -9,7 +9,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiError, driver as driverApi } from "@movo/api";
+import { ApiError, driver as driverApi, notifications as notifApi } from "@movo/api";
 import { Card, Icon, type IconName, colors, fontSizes, fonts, spacing } from "@movo/ui";
 import { useSession } from "@/lib/session";
 import { useShift } from "@/lib/shift";
@@ -46,8 +46,11 @@ export default function Profile() {
 
   const photo = useQuery({ queryKey: ["profile-photo"], queryFn: driverApi.profilePhoto });
   const ratings = useQuery({ queryKey: ["ratings"], queryFn: driverApi.ratings });
+  const unread = useQuery({ queryKey: ["notif-unread"], queryFn: notifApi.unreadCount });
   const { refetch: refetchRatings } = ratings;
-  useFocusEffect(useCallback(() => { refetchRatings(); }, [refetchRatings]));
+  const { refetch: refetchUnread } = unread;
+  useFocusEffect(useCallback(() => { refetchRatings(); refetchUnread(); }, [refetchRatings, refetchUnread]));
+  const unreadCount = unread.data?.unreadCount ?? 0;
 
   /* Square crop, compressed well under the server's 2 MB limit */
   const changePhoto = async () => {
@@ -145,6 +148,10 @@ export default function Profile() {
             ))}
           </View>
         )}
+
+        <Section title="Updates">
+          <Row icon="bell" label={unreadCount ? `Notifications (${unreadCount} new)` : "Notifications"} onPress={() => router.push("/notifications")} />
+        </Section>
 
         <Section title="Vehicle & payments">
           <Row icon="home" label="My vehicle" onPress={() => router.push("/vehicle")} />
