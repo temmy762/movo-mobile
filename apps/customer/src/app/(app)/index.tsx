@@ -3,12 +3,14 @@
  * you heading?", one card per service that's switched on (lib/launchConfig),
  * and the "next trip" reassurance. Each card opens its own booking flow.
  */
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
+import { notifications as notifApi } from "@movo/api";
 import { IN_CITY_RIDES_ENABLED } from "@movo/shared";
 import { Icon, colors, fonts } from "@movo/ui";
 import { useSession } from "@/lib/session";
@@ -37,6 +39,12 @@ export default function Home() {
   const user = useSession((s) => s.user);
   const [choosing, setChoosing] = useState(false);
 
+  /* Unread badge on the bell; re-read whenever Home is shown */
+  const unread = useQuery({ queryKey: ["notif-unread"], queryFn: notifApi.unreadCount });
+  const { refetch: refetchUnread } = unread;
+  useFocusEffect(useCallback(() => { refetchUnread(); }, [refetchUnread]));
+  const unreadCount = unread.data?.unreadCount ?? 0;
+
   /* With one service, go straight in; otherwise ask which */
   const whereTo = () => (SERVICES.length === 1 ? book(SERVICES[0].id) : setChoosing(true));
 
@@ -44,6 +52,11 @@ export default function Home() {
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: "#fff" }}>
       <View style={styles.header}>
         <Image source={require("../../../assets/brand/logo-horizontal-navy.svg")} style={styles.logo} contentFit="contain" />
+        <Pressable onPress={() => router.push("/notifications")} style={styles.bell} hitSlop={8} accessibilityRole="button"
+          accessibilityLabel={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}>
+          <Icon name="bell" size={20} color={colors.navy} />
+          {unreadCount > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{unreadCount > 9 ? "9+" : unreadCount}</Text></View>}
+        </Pressable>
       </View>
       <ScrollView style={{ backgroundColor: "#F5F5F2" }} contentContainerStyle={{ paddingBottom: 32 }}>
         <View style={styles.banner}>
@@ -126,7 +139,10 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  header: { paddingHorizontal: 20, paddingVertical: 12, backgroundColor: "#fff" },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 12, backgroundColor: "#fff" },
+  bell: { width: 38, height: 38, borderRadius: 19, backgroundColor: "#f3f4f6", alignItems: "center", justifyContent: "center" },
+  badge: { position: "absolute", top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: "#dc2626", alignItems: "center", justifyContent: "center" },
+  badgeText: { fontFamily: fonts.bodySemi, fontSize: 10, color: "#fff" },
   logo: { width: 110, height: 28 },
   banner: { height: 190, justifyContent: "flex-end" },
   hello: { fontFamily: fonts.heading, fontSize: 24, color: "#fff", padding: 20 },

@@ -383,3 +383,16 @@ export type Receipt = {
 
 /* GET /api/stripe/payment-methods — the rider's saved cards */
 export type SavedCard = { id: string; brand: string; last4: string; expMonth: number; expYear: number };
+
+/* GET /api/notifications — in-app notifications (newest first) */
+export type AppNotification = {
+  id: string;
+  eventType: string;
+  title: string;
+  message: string;
+  data: unknown;
+  readAt: string | null;
+  createdAt: string;
+  bookingId: string | null;
+  incidentId: string | null;
+};

@@ -75,6 +75,8 @@ export default function Profile() {
 
         <Section title="Payments">
           <Row icon="wallet" label="Payment methods" onPress={() => router.push("/payment-methods")} />
+          <Divider />
+          <Row icon="bell" label="Notifications" onPress={() => router.push("/notifications")} />
         </Section>
 
         <Section title="Support">
