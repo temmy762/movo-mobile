@@ -1,11 +1,13 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AppState } from "react-native";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { QueryClient, QueryClientProvider, focusManager } from "@tanstack/react-query";
 import { useFonts, Inter_600SemiBold, Inter_700Bold } from "@expo-google-fonts/inter";
 import { DMSans_400Regular, DMSans_500Medium, DMSans_600SemiBold } from "@expo-google-fonts/dm-sans";
-import { colors } from "@movo/ui";
+import Constants from "expo-constants";
+import { app as appApi } from "@movo/api";
+import { UpdateRequired, colors, isOlder } from "@movo/ui";
 import { useSession } from "@/lib/session";
 import { SocketProvider } from "@/lib/socket";
 
@@ -20,6 +22,17 @@ export default function RootLayout() {
 
   useEffect(() => { useSession.getState().restore(); }, []);
 
+  /* Builds older than the server's minimum must update (fail-open offline) */
+  const [outdated, setOutdated] = useState(false);
+  useEffect(() => {
+    const check = () => appApi.appConfig()
+      .then((c) => setOutdated(isOlder(Constants.expoConfig?.version ?? "0.0.0", c.minVersion.customer)))
+      .catch(() => {});
+    check();
+    const sub = AppState.addEventListener("change", (s) => { if (s === "active") check(); });
+    return () => sub.remove();
+  }, []);
+
   /* Coming back to the app: re-check the account and let React Query refetch,
      since sockets can miss events while asleep */
   useEffect(() => {
@@ -32,6 +45,7 @@ export default function RootLayout() {
   }, []);
 
   if (!fontsLoaded || !ready) return null;
+  if (outdated) return <UpdateRequired appName="Movo Privé" androidPackage="com.movoprive.app" />;
 
   const signedIn = !!user;
 

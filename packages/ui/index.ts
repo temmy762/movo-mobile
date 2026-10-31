@@ -5,3 +5,4 @@ export * from "./components/Input";
 export * from "./components/StatusBadge";
 export * from "./components/MovoText";
 export * from "./components/Icon";
+export * from "./components/UpdateRequired";
