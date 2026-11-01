@@ -73,11 +73,11 @@ export default function Profile() {
   };
 
   /* Required by the App Store and Google Play. The server refuses while a ride
-     is active or earnings / payouts are pending, so no one loses money. */
+     or rental is active or earnings / payouts are pending, so no one loses money. */
   const confirmDelete = () =>
     Alert.alert(
       "Delete your account?",
-      "Your chauffeur account will be closed and you'll be signed out on every device. Completed ride and payout records are kept for accounting. This can't be undone.",
+      "Your chauffeur account will be closed and your personal details, documents and banking information erased. Completed ride and payout records are kept, anonymised, for accounting. This can't be undone.",
       [
         { text: "Cancel", style: "cancel" },
         { text: "Delete account", style: "destructive", onPress: deleteAccount },
