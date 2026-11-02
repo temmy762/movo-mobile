@@ -1,7 +1,9 @@
 import type { OnboardingConsents, OnboardingDocType, OnboardingFields, OnboardingRecord } from "@movo/shared";
 import { request } from "../client";
 
-export const get = () => request<{ exists: boolean; onboarding?: OnboardingRecord }>("/api/driver/onboarding");
+/* assessmentPassed — the Standards Assessment (step 5) gates step 6 onwards */
+export const get = () =>
+  request<{ exists: boolean; onboarding?: OnboardingRecord; assessmentPassed?: boolean }>("/api/driver/onboarding");
 
 /* Saves progress (creates the record on first save). `submit: true` sends the
    application for review — Movo emails the chauffeur a confirmation. */
@@ -19,3 +21,28 @@ export const uploadDocument = (type: OnboardingDocType, file: { uri: string; nam
     "/api/driver/onboarding/document/upload", { method: "POST", body: form },
   );
 };
+
+/* ── Standards Assessment (step 5) — graded on the server ─────────────── */
+
+export type AssessmentOption = "A" | "B" | "C";
+export type AssessmentStatus = "NOT_STARTED" | "FAILED" | "PASSED" | "ADMIN_REVIEW";
+export type AssessmentQuestion = { id: number; question: string; critical: boolean; options: { key: AssessmentOption; text: string }[] };
+export type AssessmentResult = AssessmentQuestion & {
+  chosen: AssessmentOption; correct: AssessmentOption; isCorrect: boolean; explanation: string;
+};
+export type Assessment = {
+  version: string; passScore: number; totalQuestions: number; maxAttempts: number;
+  questions: AssessmentQuestion[];
+  status: AssessmentStatus;
+  attemptsUsed: number; attemptsLeft: number;
+  lastAttempt: {
+    score: number; total: number; passed: boolean; criticalMissed: number[];
+    results: AssessmentResult[]; attemptNumber: number; submittedAt: string;
+  } | null;
+};
+
+export const assessment = () => request<Assessment>("/api/driver/onboarding/assessment");
+
+/* answers: { "1": "B", … } for every question */
+export const submitAssessment = (answers: Record<string, AssessmentOption>) =>
+  request<Assessment>("/api/driver/onboarding/assessment", { method: "POST", body: { answers } });

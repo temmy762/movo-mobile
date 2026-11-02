@@ -21,6 +21,7 @@ import {
 import { Icon, colors, fonts } from "@movo/ui";
 import { useSession } from "@/lib/session";
 import { openWeb } from "@/lib/links";
+import { StandardsAssessment } from "@/components/StandardsAssessment";
 
 const TOTAL_STEPS = 10;
 const STEP_LABELS = ["Welcome", "Personal", "Vehicle", "Standards", "Test Assessment", "App Basics", "Safety", "Agreements", "Contract", "Review"];
@@ -187,16 +188,21 @@ export default function Onboarding() {
   const [consents, setConsents] = useState<OnboardingConsents>(NO_CONSENTS);
   const [docs, setDocs] = useState<Partial<Record<OnboardingDocType, DocState>>>({});
   const [standards, setStandards] = useState(false);
-  const [assessment, setAssessment] = useState(false);
+  const [assessmentPassed, setAssessmentPassed] = useState(false);
   const [appBasics, setAppBasics] = useState(false);
   const [safetyReview, setSafetyReview] = useState(false);
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
 
   /* Resume saved progress (from the app or the web) */
   useEffect(() => {
-    onboardingApi.get().then(({ exists, onboarding: o }) => {
+    onboardingApi.get().then(({ exists, onboarding: o, assessmentPassed: passed }) => {
+      setAssessmentPassed(!!passed);
       if (!exists || !o) return;
-      if (o.currentStep && o.currentStep > 1) setStep(Math.min(o.currentStep, TOTAL_STEPS));
+      /* Past step 5 without passing the assessment (applications started
+         before it existed) → back to step 5 to take it */
+      if (o.currentStep && o.currentStep > 1) {
+        setStep(o.currentStep > 5 && !passed && !o.submittedAt ? 5 : Math.min(o.currentStep, TOTAL_STEPS));
+      }
       if (o.submittedAt) setSubmitted(true);
       if (o.vehicleOption) setVehicleOption(VEHICLE_RENTAL_ENABLED ? o.vehicleOption : "OWN");
       setForm((prev) => {
@@ -214,7 +220,6 @@ export default function Onboarding() {
       /* Acknowledgement steps already passed don't need ticking again */
       const at = o.currentStep ?? 1;
       setStandards(at > 4);
-      setAssessment(at > 5);
       setAppBasics(at > 6);
       setSafetyReview(at > 7);
     }).catch(() => {}).finally(() => setLoading(false));
@@ -422,14 +427,8 @@ export default function Onboarding() {
 
       case 5:
         return (
-          <>
-            <Title title="Standards Assessment" sub="Test your knowledge of Movo standards and procedures." />
-            <Consent title="Assessment Coming Soon" description="The Movo team is preparing your assessment. You can mark this as complete for now." />
-            <Check checked={assessment} onChange={setAssessment}>
-              I understand the assessment will be available soon. I have reviewed the standards and am ready to proceed.
-            </Check>
-            <Nav onBack={back} next={() => next()} disabled={!assessment} busy={saving} />
-          </>
+          <StandardsAssessment onBack={back} continuing={saving} onScrollTop={top}
+            onPassed={() => { setAssessmentPassed(true); next(); }} />
         );
 
       case 6:
@@ -575,6 +574,7 @@ export default function Onboarding() {
           { label: "Vehicle information", ok: vehicleOption === "RENT" || (!!form.vehicleMake && !!form.vehiclePlate), back: 3 },
           { label: "Documents uploaded", ok: count === docTypes.length, note: `${count}/${docTypes.length}`, back: uploaded("PROFILE_PHOTO") ? 3 : 2 },
           { label: "Chauffeur standards acknowledged", ok: standards, back: 4 },
+          { label: "Standards assessment passed", ok: assessmentPassed, back: 5 },
           { label: "App basics reviewed", ok: appBasics, back: 6 },
           { label: "Safety procedures reviewed", ok: safetyReview, back: 7 },
           { label: "GPS consent", ok: consents.gpsConsent, back: 8 },
