@@ -107,7 +107,7 @@ export function ChauffeurStandards() {
       <Section n={2} title="Client Service Standards">
         <IconList items={[
           ["user", "Greet clients courteously, using their name when available"],
-          ["door", "Open vehicle doors and assist with entry and exit"],
+          ["door", "Concierge chauffeurs: open vehicle doors and assist with entry and exit"],
           ["luggage", "Assist with luggage when requested"],
           ["chat", "Maintain a quiet, professional environment unless the client initiates conversation"],
           ["shield", "Respect client privacy and never share personal or trip information"],
