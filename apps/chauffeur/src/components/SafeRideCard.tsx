@@ -95,13 +95,17 @@ export function SafeRideOffer({ safe }: { safe: SafeRide }) {
         <Text style={[styles.countdown, safe.timeLeft <= 10 && { color: "#f87171" }]}>{safe.timeLeft}s</Text>
       } />
       {a.booking.scheduledAt && <Text style={styles.when}>{whenLabel(a.booking.scheduledAt)}</Text>}
+      {/* Trip estimate — the customer's name and contact come after accepting */}
       <View>
-        <Text style={kit.rider}>{a.booking.clientName}</Text>
-        <Text style={kit.dim}>Booking #{a.booking.bookingNumber ?? a.booking.id.slice(0, 8)}</Text>
+        <Text style={kit.rider}>
+          {a.booking.distanceKm != null && a.booking.durationMin != null
+            ? `${a.booking.distanceKm} km · ${a.booking.durationMin} min` : "Distance unavailable"}
+        </Text>
+        <Text style={kit.dim}>Customer details shown after you accept</Text>
       </View>
       <CareRoute safe={safe} />
       <View style={styles.earnings}>
-        <Text style={styles.earningsLabel}>Est. Fare (your earnings)</Text>
+        <Text style={styles.earningsLabel}>Your payout</Text>
         <Text style={kit.earningsValue}>{money(safe.earning)}</Text>
       </View>
       {safe.error && <Banner tone="red">{safe.error}</Banner>}

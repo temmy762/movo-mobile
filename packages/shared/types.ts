@@ -59,7 +59,11 @@ export type DriverStats = {
     GET /api/driver/active-booking). `earning` is the chauffeur's payout. */
 export type DriverBooking = {
   id: string;
-  clientName: string;
+  /* null on an offer — customer details arrive once the chauffeur accepts */
+  clientName: string | null;
+  /* Offer only: estimated route distance and drive time */
+  distanceKm?: number | null;
+  durationMin?: number | null;
   pickup: string;
   dropoff: string;
   carTier?: string;
@@ -99,7 +103,9 @@ export type CareAssignment = {
   booking: {
     id: string;
     bookingNumber?: string | null;
-    clientName: string;
+    clientName: string | null;
+    distanceKm?: number | null;
+    durationMin?: number | null;
     pickup: string;
     dropoff: string;
     carName: string;
@@ -265,6 +271,8 @@ export type OnboardingRecord = Partial<Record<keyof OnboardingFields, string | n
   termsAcceptedAt?: string | null;
   contractSignedAt?: string | null;
   documents?: { type: OnboardingDocType; fileName: string }[];
+  /* App Basics (step 6) sections reviewed */
+  appBasicsReviewed?: string[];
 };
 
 /* ── Customer app ── */

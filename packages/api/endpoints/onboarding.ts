@@ -46,3 +46,7 @@ export const assessment = () => request<Assessment>("/api/driver/onboarding/asse
 /* answers: { "1": "B", … } for every question */
 export const submitAssessment = (answers: Record<string, AssessmentOption>) =>
   request<Assessment>("/api/driver/onboarding/assessment", { method: "POST", body: { answers } });
+
+/* App Basics (step 6): the chauffeur opened a section — saved to their account */
+export const reviewAppBasics = (section: string) =>
+  request<{ reviewed: string[]; total: number }>("/api/driver/onboarding/app-basics", { method: "POST", body: { section } });

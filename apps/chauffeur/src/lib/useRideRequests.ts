@@ -150,6 +150,9 @@ export function useRideRequests({ online, onAccepted }: {
       } else {
         setPhase("accepted");
         onAccepted?.();
+        /* The offer had no customer details — load the full ride now it's ours */
+        const offered = booking.id;
+        loadActive().then((full) => { if (full?.id === offered) setBooking(full); });
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (e) {
@@ -159,7 +162,7 @@ export function useRideRequests({ online, onAccepted }: {
     } finally {
       setActing(false);
     }
-  }, [booking, acting, backToSearching, onAccepted]);
+  }, [booking, acting, backToSearching, onAccepted, loadActive]);
 
   const decline = useCallback(() => {
     if (!booking) return;

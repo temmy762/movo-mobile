@@ -211,6 +211,12 @@ export default function Home() {
   );
 }
 
+/* "12.4 km · 18 min" for an offer, or null when no route estimate came back */
+export function tripMeta(b: { distanceKm?: number | null; durationMin?: number | null }) {
+  if (b.distanceKm == null || b.durationMin == null) return null;
+  return `${b.distanceKm} km · ${b.durationMin} min`;
+}
+
 function OfferCard({ booking, timeLeft, acting, onAccept, onDecline }: {
   booking: DriverBooking; timeLeft: number; acting: boolean; onAccept: () => void; onDecline: () => void;
 }) {
@@ -227,15 +233,16 @@ function OfferCard({ booking, timeLeft, acting, onAccept, onDecline }: {
         <Text style={styles.when}>{whenLabel(booking.scheduledAt)}</Text>
       )}
       <View style={styles.between}>
+        {/* Trip estimate — the customer's name and contact come after accepting */}
         <View>
-          <Text style={styles.rider}>{booking.clientName}</Text>
-          <Text style={styles.dim}>Booking #{booking.bookingNumber ?? booking.id.slice(0, 8)}</Text>
+          <Text style={styles.rider}>{tripMeta(booking) ?? "Distance unavailable"}</Text>
+          <Text style={styles.dim}>Customer details shown after you accept</Text>
         </View>
         {booking.paymentStatus === "PAID" && <Text style={styles.paid}>Paid</Text>}
       </View>
       <Route pickup={booking.pickup} dropoff={booking.dropoff} />
       <View style={styles.earnings}>
-        <Text style={styles.earningsLabel}>Est. Fare (your earnings)</Text>
+        <Text style={styles.earningsLabel}>Your payout</Text>
         <Text style={styles.earningsValue}>{money(booking.earning)}</Text>
       </View>
       {/* Time left */}

@@ -23,6 +23,7 @@ import { useSession } from "@/lib/session";
 import { openWeb } from "@/lib/links";
 import { StandardsAssessment } from "@/components/StandardsAssessment";
 import { ChauffeurStandards } from "@/components/ChauffeurStandards";
+import { AppBasics, allAppBasicsReviewed } from "@/components/AppBasics";
 
 const TOTAL_STEPS = 10;
 const STEP_LABELS = ["Welcome", "Personal", "Vehicle", "Standards", "Test Assessment", "App Basics", "Safety", "Agreements", "Contract", "Review"];
@@ -190,7 +191,8 @@ export default function Onboarding() {
   const [docs, setDocs] = useState<Partial<Record<OnboardingDocType, DocState>>>({});
   const [standards, setStandards] = useState(false);
   const [assessmentPassed, setAssessmentPassed] = useState(false);
-  const [appBasics, setAppBasics] = useState(false);
+  /* App Basics sections reviewed — saved to the account as each one is opened */
+  const [appBasicsReviewed, setAppBasicsReviewed] = useState<string[]>([]);
   const [safetyReview, setSafetyReview] = useState(false);
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
 
@@ -201,8 +203,15 @@ export default function Onboarding() {
       if (!exists || !o) return;
       /* Past step 5 without passing the assessment (applications started
          before it existed) → back to step 5 to take it */
+      const reviewed = o.appBasicsReviewed ?? [];
+      setAppBasicsReviewed(reviewed);
       if (o.currentStep && o.currentStep > 1) {
-        setStep(o.currentStep > 5 && !passed && !o.submittedAt ? 5 : Math.min(o.currentStep, TOTAL_STEPS));
+        setStep(
+          o.submittedAt ? Math.min(o.currentStep, TOTAL_STEPS)
+          : o.currentStep > 5 && !passed ? 5
+          : o.currentStep > 6 && !allAppBasicsReviewed(reviewed) ? 6
+          : Math.min(o.currentStep, TOTAL_STEPS),
+        );
       }
       if (o.submittedAt) setSubmitted(true);
       if (o.vehicleOption) setVehicleOption(VEHICLE_RENTAL_ENABLED ? o.vehicleOption : "OWN");
@@ -221,7 +230,6 @@ export default function Onboarding() {
       /* Acknowledgement steps already passed don't need ticking again */
       const at = o.currentStep ?? 1;
       setStandards(at > 4);
-      setAppBasics(at > 6);
       setSafetyReview(at > 7);
     }).catch(() => {}).finally(() => setLoading(false));
   }, []);
@@ -264,6 +272,13 @@ export default function Onboarding() {
     ]);
 
   const uploaded = (k: OnboardingDocType) => docs[k]?.status === "uploaded";
+
+  const markReviewed = (key: string) => {
+    setAppBasicsReviewed((p) => (p.includes(key) ? p : [...p, key]));
+    onboardingApi.reviewAppBasics(key)
+      .then((r) => setAppBasicsReviewed(r.reviewed))
+      .catch(() => { /* kept locally; the server checks again on Continue */ });
+  };
 
   /* Saves everything so far, then moves on */
   const next = async (extra: Record<string, unknown> = {}) => {
@@ -413,32 +428,13 @@ export default function Onboarding() {
       case 6:
         return (
           <>
-            <Title title="Chauffeur App Basics" sub="Familiarise yourself with how the Movo app works." />
-            <Info title="Going Online & Accepting Rides" items={[
-              "Toggle your status to Online on the home screen to begin receiving bookings",
-              "Incoming bookings show client name, pickup location, and trip details",
-              "You have 30 seconds to accept before the ride is offered to another chauffeur",
-              "Declining too frequently will affect your availability ranking",
-            ]} />
-            <Info title="Navigation & Route" items={[
-              "Always follow the assigned pickup and drop-off route",
-              "Route deviations must be communicated to the client and logged",
-              "Use the in-app map for live turn-by-turn navigation",
-            ]} />
-            <Info title="Communication with Clients" items={[
-              "Use only the in-app messaging system to contact clients",
-              "Do not share your personal contact details with clients",
-              "Be responsive — unread messages must be addressed before departure",
-            ]} />
-            <Info title="Earnings & Payments" items={[
-              "All payments are processed by Movo — no cash handling required",
-              "Earnings are deposited to your registered bank account weekly",
-              "View trip history, earnings, and ratings in the Wallet section",
-            ]} />
-            <Check checked={appBasics} onChange={setAppBasics}>
-              I have reviewed and understood the Chauffeur App Basics. I am ready to operate the app professionally.
-            </Check>
-            <Nav onBack={back} next={() => next()} disabled={!appBasics} busy={saving} />
+            <Title title="Chauffeur App Basics" sub="Learn how to use the Movo Chauffeur App before accepting bookings." />
+            <AppBasics reviewed={appBasicsReviewed} onReviewed={markReviewed} />
+            {!allAppBasicsReviewed(appBasicsReviewed) && (
+              <Text style={[s.sub, { textAlign: "center", fontSize: 12 }]}>Open all six sections to continue.</Text>
+            )}
+            <Nav onBack={back} next={() => next()} nextLabel="Accept & Continue"
+              disabled={!allAppBasicsReviewed(appBasicsReviewed)} busy={saving} />
           </>
         );
 
@@ -554,7 +550,7 @@ export default function Onboarding() {
           { label: "Documents uploaded", ok: count === docTypes.length, note: `${count}/${docTypes.length}`, back: uploaded("PROFILE_PHOTO") ? 3 : 2 },
           { label: "Chauffeur standards acknowledged", ok: standards, back: 4 },
           { label: "Standards assessment passed", ok: assessmentPassed, back: 5 },
-          { label: "App basics reviewed", ok: appBasics, back: 6 },
+          { label: "App basics reviewed", ok: allAppBasicsReviewed(appBasicsReviewed), back: 6 },
           { label: "Safety procedures reviewed", ok: safetyReview, back: 7 },
           { label: "GPS consent", ok: consents.gpsConsent, back: 8 },
           { label: "Privacy policy accepted", ok: consents.privacyPolicy, back: 8 },
