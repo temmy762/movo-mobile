@@ -22,6 +22,7 @@ import { Icon, colors, fonts } from "@movo/ui";
 import { useSession } from "@/lib/session";
 import { openWeb } from "@/lib/links";
 import { StandardsAssessment } from "@/components/StandardsAssessment";
+import { ChauffeurStandards } from "@/components/ChauffeurStandards";
 
 const TOTAL_STEPS = 10;
 const STEP_LABELS = ["Welcome", "Personal", "Vehicle", "Standards", "Test Assessment", "App Basics", "Safety", "Agreements", "Contract", "Review"];
@@ -395,33 +396,11 @@ export default function Onboarding() {
         return (
           <>
             <Title title="Chauffeur Standards" sub="Please read and acknowledge our service standards before proceeding." />
-            <Info title="Professional Appearance" items={[
-              "Dark, clean, wrinkle-free business attire at all times",
-              "Well-groomed appearance — hair, nails, and hygiene standards",
-              "No strong fragrances; subtle professional presentation",
-              "Polished shoes — no trainers or casual footwear",
-            ]} />
-            <Info title="Client Service Standards" items={[
-              "Always greet clients by name and open vehicle doors",
-              "Maintain a quiet, professional environment unless client initiates",
-              "Assist with luggage promptly and carefully",
-              "Zero tolerance for phone use while driving",
-              "Arrive 5–10 minutes early for every booking",
-            ]} />
-            <Info title="Punctuality & Reliability" items={[
-              "Accepting a booking is a firm commitment — no no-shows",
-              "Notify Movo immediately if unavoidable delays occur",
-              "Three cancellations within 30 days triggers account review",
-            ]} />
-            <Info title="Vehicle Cleanliness" items={[
-              "Vehicle must be spotless before every trip — interior and exterior",
-              "No food, strong odours, or personal items visible in the vehicle",
-              "Offer water and a fresh ambient setting for every client",
-            ]} />
+            <ChauffeurStandards />
             <Check checked={standards} onChange={setStandards}>
               I have read and understood the Movo Chauffeur Standards & Expectations. I commit to upholding these standards on every trip.
             </Check>
-            <Nav onBack={back} next={() => next()} disabled={!standards} busy={saving} />
+            <Nav onBack={back} next={() => next()} nextLabel="Accept & Continue" disabled={!standards} busy={saving} />
           </>
         );
 
