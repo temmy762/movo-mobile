@@ -199,7 +199,7 @@ export function StandardsAssessment({ onPassed, onBack, continuing, onScrollTop 
       <View style={s.info}>
         <Text style={s.infoTitle}>Before starting</Text>
         <Text style={s.infoText}>
-          You need {Math.round((data.passScore / data.totalQuestions) * 100)}% and must answer both safety questions correctly. You have {data.maxAttempts} attempts.
+          You need {Math.round((data.passScore / data.totalQuestions) * 100)}% and must answer both safety questions correctly. You have {data.maxAttempts} attempt{data.maxAttempts === 1 ? "" : "s"}.
         </Text>
         {data.attemptsUsed > 0 && <Text style={s.infoText}>{data.attemptsLeft} of {data.maxAttempts} attempts left.</Text>}
       </View>
