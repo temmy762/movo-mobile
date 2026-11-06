@@ -55,6 +55,13 @@ export const reorderStops = (id: string, stops: string[]) =>
 
 /* ── After the ride ── */
 
+/* Tip the chauffeur on the card used for the ride. If the bank asks for 3D
+   Secure: confirm it, then call again with confirmedIntentId. */
+export const tip = (id: string, body: { amount: number } | { confirmedIntentId: string }) =>
+  request<{ ok: true; tip: number } | { requiresAction: true; clientSecret: string; intentId: string; amount: number }>(
+    `/api/bookings/${id}/tip`, { body },
+  );
+
 /* 404 = the ride wasn't paid (no receipt) */
 export const receipt = (id: string) => request<Receipt>(`/api/bookings/${id}/receipt`);
 

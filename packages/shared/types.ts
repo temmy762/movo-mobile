@@ -189,12 +189,14 @@ export type DriverRide = {
 export type WalletTransaction = {
   id: string;
   kind: "EARNING" | "PAYOUT" | "TOPUP";
+  isTip?: boolean;
   reference: string | null;
   label: string;
   date: string;
   amount: number;
   type: "in" | "out";
-  /* PENDING_SETTLEMENT (earning < 48 h) | PENDING (payout processing) | COMPLETED | FAILED */
+  /* PENDING_SETTLEMENT (earning < 48 h) | PENDING (payout awaiting approval)
+     | PROCESSING (payout sent via Stripe) | COMPLETED (paid) | FAILED */
   status: string;
   settlesAt: string | null;
 };
@@ -204,6 +206,8 @@ export type Wallet = {
   totalEarned: number;
   pendingEarnings: number;
   pendingPayouts: number;
+  totalTips?: number;
+  completedTrips?: number;
   settlementHours: number;
   transactions: WalletTransaction[];
 };
@@ -355,6 +359,7 @@ export type RideDetail = {
   cancelledBy: string | null;
   createdAt: string;
   rating: number | null;
+  tip?: number | null;
   driver: {
     firstName: string;
     lastName: string;

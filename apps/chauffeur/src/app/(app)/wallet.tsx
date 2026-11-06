@@ -29,15 +29,17 @@ function when(iso: string) {
 }
 
 const title = (t: WalletTransaction) =>
-  t.kind === "EARNING" ? "Trip earnings" : t.kind === "PAYOUT" ? "Withdrawal to bank" : "Top-up";
+  t.isTip ? "Tip" : t.kind === "EARNING" ? "Trip earnings" : t.kind === "PAYOUT" ? "Withdrawal to bank" : "Top-up";
 
 /* What the chauffeur needs to know about this money */
 function pill(t: WalletTransaction) {
   if (t.status === "PENDING_SETTLEMENT") return { label: "Pending", bg: "#e0ecff", color: "#1d4ed8" };
-  if (t.status === "PENDING") return { label: "Processing", bg: "#fef3c7", color: "#b45309" };
+  /* Withdrawals: Pending (awaiting approval) → Processing (sent via Stripe) → Paid, or Failed */
+  if (t.status === "PENDING") return { label: "Pending", bg: "#fef3c7", color: "#b45309" };
+  if (t.status === "PROCESSING") return { label: "Processing", bg: "#e0ecff", color: "#1d4ed8" };
   if (t.status === "FAILED") return { label: "Failed", bg: "#fee2e2", color: "#dc2626" };
   return t.kind === "PAYOUT"
-    ? { label: "Paid out", bg: "#f1f5f9", color: "#475569" }
+    ? { label: "Paid", bg: "#dcfce7", color: "#15803d" }
     : { label: "Available", bg: "#dcfce7", color: "#15803d" };
 }
 
@@ -86,7 +88,7 @@ export default function WalletScreen() {
     try {
       const res = await driverApi.requestPayout(Math.round(value * 100) / 100);
       setWithdrawing(false);
-      setNotice(res.automated ? "Sent to your bank account." : "Withdrawal requested — Movo will process it shortly.");
+      setNotice(res.automated ? "Sent. It's on its way to your bank account." : "Withdrawal requested — Movo will process it shortly.");
       refetch();
     } catch (e) {
       setError(e instanceof ApiError && e.status !== 0 ? e.message : "Something went wrong. Please try again.");
@@ -119,6 +121,17 @@ export default function WalletScreen() {
             </View>
           </View>
         </LinearGradient>
+
+        <View style={styles.tiles}>
+          <View style={styles.tile}>
+            <Text style={styles.tileLabel}>Completed Trips</Text>
+            <Text style={styles.tileValue}>{wallet.data ? wallet.data.completedTrips ?? 0 : "—"}</Text>
+          </View>
+          <View style={styles.tile}>
+            <Text style={styles.tileLabel}>Tips</Text>
+            <Text style={styles.tileValue}>{wallet.data ? money(wallet.data.totalTips ?? 0) : "—"}</Text>
+          </View>
+        </View>
 
         {notice && (
           <Pressable onPress={() => setNotice(null)} style={styles.notice}>
@@ -196,6 +209,10 @@ const styles = StyleSheet.create({
   balanceLabel: { fontFamily: fonts.body, fontSize: 13, color: "rgba(255,255,255,0.78)" },
   balanceValue: { fontFamily: fonts.heading, fontSize: 40, color: "#fff", marginTop: 2 },
   balanceRow: { flexDirection: "row", marginTop: 14 },
+  tiles: { flexDirection: "row", gap: 10 },
+  tile: { flex: 1, backgroundColor: "#fff", borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12 },
+  tileLabel: { fontFamily: fonts.body, fontSize: 12, color: "#6b7280" },
+  tileValue: { fontFamily: fonts.heading, fontSize: 18, color: "#111827", marginTop: 2 },
   balanceSub: { fontFamily: fonts.heading, fontSize: 20, color: "#fff", marginTop: 2 },
   divider: { width: 1, backgroundColor: "rgba(255,255,255,0.3)", marginHorizontal: 18 },
   notice: { flexDirection: "row", gap: 8, alignItems: "center", padding: 12, borderRadius: 14, backgroundColor: "#dcfce7" },

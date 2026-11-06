@@ -18,6 +18,7 @@ import { SOCKET_EVENTS, type DriverPosition } from "@movo/shared";
 import { Icon, colors, fonts } from "@movo/ui";
 import { useSocket } from "@/lib/socket";
 import { RouteChangeSheet } from "@/components/RouteChangeSheet";
+import { TipCard } from "@/components/TipCard";
 import { canCancel, cancelPolicy, headline, isLive, ridePhase, type RidePhase } from "@/lib/ridePhase";
 
 const POLL_MS = 8_000;
@@ -268,6 +269,9 @@ export default function Ride() {
         </View>
 
         {phase === "completed" && r.rating == null && <RateChauffeur id={id} name={d?.firstName} />}
+        {phase === "completed" && r.paymentStatus === "PAID" && !!r.driver && (
+          <TipCard id={id} tip={r.tip} completedAt={r.completedAt} name={r.driver.firstName} />
+        )}
 
         {!live && (
           <View style={{ gap: 10 }}>

@@ -39,6 +39,7 @@ export type WalletTxType = (typeof WalletTxType)[keyof typeof WalletTxType];
 
 export const WalletTxStatus = {
   PENDING: "PENDING",
+  PROCESSING: "PROCESSING",
   COMPLETED: "COMPLETED",
   FAILED: "FAILED",
 } as const;
