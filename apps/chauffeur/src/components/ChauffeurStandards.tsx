@@ -78,9 +78,9 @@ function DotList({ items }: { items: string[] }) {
 }
 
 const UNIFORMS = [
-  { src: require("../../assets/standards/uniform-shirt.webp"), label: "White shirt and dark pants" },
-  { src: require("../../assets/standards/uniform-jacket.webp"), label: "With jacket (optional)" },
-  { src: require("../../assets/standards/uniform-suit.webp"), label: "With suit (optional)" },
+  { src: require("../../assets/standards/uniform-shirt.webp"), label: "Standard & Safe Ride" },
+  { src: require("../../assets/standards/uniform-jacket.webp"), label: "Executive" },
+  { src: require("../../assets/standards/uniform-suit.webp"), label: "Concierge" },
 ];
 
 export function ChauffeurStandards() {
@@ -96,8 +96,9 @@ export function ChauffeurStandards() {
           ))}
         </View>
         <DotList items={[
-          "White dress shirt and dark pants",
-          "A suit or jacket may be worn (optional)",
+          "Standard and Safe Ride: white shirt, dark pants and clean dark shoes",
+          "Executive: the Standard uniform plus a dark blazer",
+          "Concierge: full dark suit with a dark tie",
           "Keep a clean, well-groomed appearance, including hair, nails and hygiene",
           "Avoid strong fragrances",
           "Maintain a professional and presentable appearance",

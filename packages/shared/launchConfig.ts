@@ -23,6 +23,9 @@ export const HOURLY_CHARTER_ENABLED = false;
 /** Chauffeur vehicle rental (dashboard, onboarding option, admin, public site). */
 export const VEHICLE_RENTAL_ENABLED = false;
 
+/* Oldest model year accepted for a chauffeur's own vehicle */
+export const MIN_VEHICLE_YEAR = 2017;
+
 /**
  * In-City tiers customers can see and book (Oct 2026: Standard only).
  * Customer-facing only — admin pricing, chauffeur vehicles and every tier's

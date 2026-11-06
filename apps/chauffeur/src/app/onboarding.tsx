@@ -16,7 +16,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useQueryClient } from "@tanstack/react-query";
 import { ApiError, onboarding as onboardingApi } from "@movo/api";
 import {
-  VEHICLE_RENTAL_ENABLED, type OnboardingConsents, type OnboardingDocType, type OnboardingFields,
+  MIN_VEHICLE_YEAR, VEHICLE_RENTAL_ENABLED, type OnboardingConsents, type OnboardingDocType, type OnboardingFields,
 } from "@movo/shared";
 import { Icon, colors, fonts } from "@movo/ui";
 import { useSession } from "@/lib/session";
@@ -30,7 +30,7 @@ const STEP_LABELS = ["Welcome", "Personal", "Vehicle", "Standards", "Test Assess
 const VEHICLE_TIERS = ["Economy (Standard)", "Premium (Executive)", "First Class (Concierge)"];
 const VEHICLE_COLORS = ["Black", "White", "Silver", "Grey", "Dark Blue", "Other"];
 const THIS_YEAR = new Date().getFullYear();
-const VEHICLE_YEARS = Array.from({ length: 20 }, (_, i) => String(THIS_YEAR - i));
+const VEHICLE_YEARS = Array.from({ length: THIS_YEAR - MIN_VEHICLE_YEAR + 1 }, (_, i) => String(THIS_YEAR - i));
 const DOB = /^\d{4}-\d{2}-\d{2}$/;
 const gradient = ["#1a1a2e", "#131936", "#C6BFB2"] as const;
 
@@ -189,6 +189,7 @@ export default function Onboarding() {
   const [form, setForm] = useState<OnboardingFields>(EMPTY_FORM);
   const [consents, setConsents] = useState<OnboardingConsents>(NO_CONSENTS);
   const [docs, setDocs] = useState<Partial<Record<OnboardingDocType, DocState>>>({});
+  const [vehicleConfirmed, setVehicleConfirmed] = useState(false);
   const [standards, setStandards] = useState(false);
   const [assessmentPassed, setAssessmentPassed] = useState(false);
   /* App Basics sections reviewed — saved to the account as each one is opened */
@@ -229,6 +230,7 @@ export default function Onboarding() {
       setDocs(restored);
       /* Acknowledgement steps already passed don't need ticking again */
       const at = o.currentStep ?? 1;
+      setVehicleConfirmed(at > 3);
       setStandards(at > 4);
       setSafetyReview(at > 7);
     }).catch(() => {}).finally(() => setLoading(false));
@@ -385,6 +387,14 @@ export default function Onboarding() {
             )}
             {vehicleOption === "OWN" && (
               <>
+                <Info title="Vehicle Requirements" items={[
+                    "2017 or newer",
+                    "4-door sedan or SUV",
+                    "Clean, with no visible damage",
+                    "Registered and insured in Manitoba",
+                    "Must pass a Movo inspection",
+                    "Dark colours preferred, not required",
+                ]} />
                 <Field label="Make" required><Box value={form.vehicleMake} onChangeText={(v) => setField("vehicleMake", v)} placeholder="e.g. Mercedes" /></Field>
                 <Field label="Model" required><Box value={form.vehicleModel} onChangeText={(v) => setField("vehicleModel", v)} placeholder="e.g. S-Class" /></Field>
                 <Field label="Year" required><Chips value={form.vehicleYear} options={VEHICLE_YEARS} onChange={(v) => setField("vehicleYear", v)} /></Field>
@@ -395,6 +405,7 @@ export default function Onboarding() {
                 <Field label="Vehicle Class" required><Chips value={form.vehicleTier} options={VEHICLE_TIERS} onChange={(v) => setField("vehicleTier", v)} /></Field>
                 <Text style={s.label}>Vehicle Documents</Text>
                 {VEHICLE_DOCS.map((d) => <Upload key={d.key} label={d.label} doc={docs[d.key]} onPick={() => pick(d.key)} />)}
+                <Check checked={vehicleConfirmed} onChange={setVehicleConfirmed}>I confirm my vehicle meets these requirements.</Check>
               </>
             )}
             {vehicleOption === "RENT" && (
@@ -402,7 +413,8 @@ export default function Onboarding() {
             )}
             <Nav onBack={back} next={() => next({ vehicleOption })} busy={saving}
               disabled={!vehicleOption || (vehicleOption === "OWN" && (
-                !form.vehicleMake.trim() || !form.vehicleModel.trim() || !form.vehicleYear || !form.vehicleColor ||
+                !vehicleConfirmed || Number(form.vehicleYear) < MIN_VEHICLE_YEAR ||
+                !form.vehicleMake.trim() || !form.vehicleModel.trim() || !form.vehicleColor ||
                 !form.vehiclePlate.trim() || !form.vehicleTier || !VEHICLE_DOCS.every((d) => uploaded(d.key))))} />
           </>
         );
@@ -546,7 +558,7 @@ export default function Onboarding() {
         const count = docTypes.filter(uploaded).length;
         const items = [
           { label: "Personal information", ok: DOB.test(form.dob) && !!form.licenseNumber, back: 2 },
-          { label: "Vehicle information", ok: vehicleOption === "RENT" || (!!form.vehicleMake && !!form.vehiclePlate), back: 3 },
+          { label: "Vehicle information", ok: vehicleOption === "RENT" || (!!form.vehicleMake && !!form.vehiclePlate && Number(form.vehicleYear) >= MIN_VEHICLE_YEAR), back: 3 },
           { label: "Documents uploaded", ok: count === docTypes.length, note: `${count}/${docTypes.length}`, back: uploaded("PROFILE_PHOTO") ? 3 : 2 },
           { label: "Chauffeur standards acknowledged", ok: standards, back: 4 },
           { label: "Standards assessment passed", ok: assessmentPassed, back: 5 },
