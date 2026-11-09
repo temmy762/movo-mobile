@@ -13,6 +13,7 @@ import {
   Banner, GradientButton, OutlineButton, RatingModal, SquareButton, WaitingBanner,
   callNumber, openChat, openNavigation, parts,
 } from "./tripParts";
+import { WalkAround } from "./WalkAround";
 
 type SafeRide = ReturnType<typeof useSafeRide>;
 
@@ -193,6 +194,7 @@ export function SafeRideCard({ safe }: { safe: SafeRide }) {
               Waiting for the Primary chauffeur to complete the ride…
             </Banner>
           )}
+          {primary && <WalkAround bookingId={a.booking.id} stage="PICKUP" />}
           <View style={parts.actions}>
             {primary && phone ? <SquareButton icon="phone" label="Call customer" onPress={() => callNumber(phone)} /> : null}
             {chat}
@@ -209,6 +211,7 @@ export function SafeRideCard({ safe }: { safe: SafeRide }) {
         </>
       )}
 
+      {safe.phase === "started" && primary && <WalkAround bookingId={a.booking.id} stage="DROPOFF" />}
       {safe.phase === "started" && (
         <View style={parts.actions}>
           {chat}
