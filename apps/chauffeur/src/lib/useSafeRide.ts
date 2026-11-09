@@ -244,6 +244,14 @@ export function useSafeRide({ canOffer, onAccepted }: {
     setNotice("Safe Ride complete. You're back in the queue for new requests.");
   }, "Could not close the job. Please try again.");
 
+  /* PRIMARY at the pickup, customer didn't show after the free waiting time */
+  const noShow = () => run(async () => {
+    if (!assignment) return;
+    await driverApi.noShow(assignment.booking.id);
+    clear();
+    setNotice("Marked as a no-show. Your share of the $5.00 no-show fee is in your wallet.");
+  }, "Couldn't mark the no-show. Please try again.");
+
   const rate = async (rating: number, feedback: string) => {
     if (assignment) await driverApi.rateRider(assignment.booking.id, rating, feedback.trim() || null).catch(() => {});
     clear();
@@ -251,7 +259,7 @@ export function useSafeRide({ canOffer, onAccepted }: {
 
   return {
     phase, assignment, coDriver, earning, timeLeft, busy, error, notice, waiting,
-    accept, decline, headToPickup, arrive, start, complete, backAtVehicle, rate,
+    accept, decline, headToPickup, arrive, start, complete, backAtVehicle, noShow, rate,
     clearError: () => setError(null),
     clearNotice: () => setNotice(null),
   };

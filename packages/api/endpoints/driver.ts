@@ -34,6 +34,11 @@ export const acceptBooking = (id: string) =>
 export const declineBooking = (id: string) =>
   request<{ ok: true; released: boolean }>(`/api/bookings/${id}/decline`, { method: "PATCH" });
 
+/* Customer not at the pickup after the free waiting time — cancels with the
+   $5.00 no-show fee (City Rides, and the Safe Ride PRIMARY) */
+export const noShow = (bookingId: string) =>
+  request<{ ok: true; fee: number; refundAmount: number; refunded: boolean }>(`/api/bookings/${bookingId}/no-show`, { method: "POST" });
+
 /* ── Trip controls (standard rides) ── */
 
 export type ArrivedResponse = { ok: true; arrivedAt: string; freeWaitingMinutes: number; waitingRatePerMin: number };

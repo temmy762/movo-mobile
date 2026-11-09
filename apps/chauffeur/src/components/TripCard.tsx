@@ -3,7 +3,7 @@
  * → Start Ride → End Ride → rate the rider. Mirrors the web chauffeur home.
  */
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { Alert, Text, View } from "react-native";
 import type { DriverBooking } from "@movo/shared";
 import { Icon } from "@movo/ui";
 import { useTrip } from "@/lib/useTrip";
@@ -79,6 +79,13 @@ export function TripCard({ booking, onFinished }: {
         )}
       </View>
 
+      {trip.step === "arrived" && trip.waiting && trip.waiting.freeLeft === 0 && (
+        <RedOutlineButton title="Customer didn't show — $5.00 no-show fee" onPress={() =>
+          Alert.alert("Mark as a no-show?", "The ride is cancelled, a $5.00 no-show fee (incl. GST) is charged and the rest refunded. Only do this if you couldn't find or reach the customer.", [
+            { text: "Keep waiting", style: "cancel" },
+            { text: "Mark no-show", style: "destructive", onPress: async () => { if (await trip.noShow()) onFinished(false); } },
+          ])} />
+      )}
       {beforeStart && <RedOutlineButton title="Can't make this ride — Cancel" onPress={() => setShowCancel(true)} />}
       {trip.step === "started" && (
         <RedOutlineButton title="Report Incident" onPress={() => router.push({

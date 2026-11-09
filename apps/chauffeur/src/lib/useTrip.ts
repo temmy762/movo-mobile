@@ -119,13 +119,23 @@ export function useTrip(booking: DriverBooking) {
     return ok;
   };
 
+  /* Customer didn't show: resolves true once the ride is closed */
+  const noShow = async () => {
+    let ok = false;
+    await run(async () => {
+      await driverApi.noShow(booking.id);
+      ok = true;
+    }, "Couldn't mark the no-show. Please try again.");
+    return ok;
+  };
+
   /* Best effort — the trip is already complete */
   const rate = (rating: number, feedback: string) =>
     driverApi.rateRider(booking.id, rating, feedback.trim() || null).catch(() => {});
 
   return {
     step, busy, error, route, routeNotice, waiting,
-    arrive, start, complete, cancel, rate,
+    arrive, start, complete, cancel, noShow, rate,
     clearError: () => setError(null),
     clearRouteNotice: () => setRouteNotice(null),
   };

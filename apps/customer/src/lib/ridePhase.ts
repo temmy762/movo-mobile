@@ -51,7 +51,12 @@ export function headline(r: RideDetail, p: RidePhase): { title: string; body: st
     case "no_driver":
       return { title: "No chauffeur found", body: "We couldn't find an available chauffeur in time, so your ride was cancelled and fully refunded." };
     default:
-      return { title: "Ride cancelled", body: r.cancelledBy === "admin" ? "This ride was cancelled by Movo support." : "This ride has been cancelled." };
+      return {
+        title: r.cancelledBy === "no_show" ? "Ride cancelled — no-show" : "Ride cancelled",
+        body: r.cancelledBy === "admin" ? "This ride was cancelled by Movo support."
+          : r.cancelledBy === "no_show" ? "Your chauffeur waited at the pickup and couldn't find you, so the ride was cancelled as a no-show. A $5.00 no-show fee (incl. GST) applies; the rest of your payment is refunded."
+          : "This ride has been cancelled.",
+      };
   }
 }
 

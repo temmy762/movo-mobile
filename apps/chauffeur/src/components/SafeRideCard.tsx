@@ -3,7 +3,7 @@
  * roles. Mirrors the Care panels of the web chauffeur home.
  */
 import type { ReactNode } from "react";
-import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Image, StyleSheet, Text, View } from "react-native";
 import type { CoDriver } from "@movo/shared";
 import { Icon, colors, fonts } from "@movo/ui";
 import { needsSetOff, type useSafeRide } from "@/lib/useSafeRide";
@@ -199,6 +199,13 @@ export function SafeRideCard({ safe }: { safe: SafeRide }) {
             <GradientButton title={safe.busy ? "…" : primary ? "Start Ride" : "Pick Up Primary Chauffeur"}
               onPress={safe.start} disabled={safe.busy || waitingOnPrimary} />
           </View>
+          {primary && safe.waiting && safe.waiting.freeLeft === 0 && (
+            <OutlineButton title="Customer didn't show — $5.00 no-show fee" onPress={() =>
+              Alert.alert("Mark as a no-show?", "The ride is cancelled, a $5.00 no-show fee (incl. GST) is charged and the rest refunded. Only do this if you couldn't find or reach the customer.", [
+                { text: "Keep waiting", style: "cancel" },
+                { text: "Mark no-show", style: "destructive", onPress: () => { safe.noShow(); } },
+              ])} />
+          )}
         </>
       )}
 
