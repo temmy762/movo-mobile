@@ -3,12 +3,14 @@ import { request } from "../client";
 
 /* assessmentPassed — the Standards Assessment (step 5) gates step 6 onwards */
 export const get = () =>
-  request<{ exists: boolean; onboarding?: OnboardingRecord; assessmentPassed?: boolean }>("/api/driver/onboarding");
+  request<{ exists: boolean; onboarding?: OnboardingRecord; assessmentPassed?: boolean; driveTransmission?: string | null }>("/api/driver/onboarding");
 
 /* Saves progress (creates the record on first save). `submit: true` sends the
    application for review — Movo emails the chauffeur a confirmation. */
 export const save = (body: Partial<OnboardingFields> & Partial<OnboardingConsents> & {
   type?: "INDIVIDUAL"; currentStep?: number; completedSteps?: number[]; vehicleOption?: "OWN" | "RENT"; submit?: boolean;
+  /* Safe Ride matching: AUTOMATIC | MANUAL | BOTH */
+  driveTransmission?: string;
 }) => request<{ success: true }>("/api/driver/onboarding", { method: "PATCH", body });
 
 /* Photo (JPG / PNG / WebP / HEIC) or PDF, max 10 MB */

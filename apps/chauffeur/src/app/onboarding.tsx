@@ -32,6 +32,7 @@ const VEHICLE_COLORS = ["Black", "White", "Silver", "Grey", "Dark Blue", "Other"
 const THIS_YEAR = new Date().getFullYear();
 const VEHICLE_YEARS = Array.from({ length: THIS_YEAR - MIN_VEHICLE_YEAR + 1 }, (_, i) => String(THIS_YEAR - i));
 const DOB = /^\d{4}-\d{2}-\d{2}$/;
+const TX_LABELS: Record<string, string> = { AUTOMATIC: "Automatic only", MANUAL: "Manual only", BOTH: "Manual and automatic" };
 const gradient = ["#1a1a2e", "#131936", "#C6BFB2"] as const;
 
 const PERSONAL_DOCS: { key: OnboardingDocType; label: string }[] = [
@@ -190,6 +191,8 @@ export default function Onboarding() {
   const [consents, setConsents] = useState<OnboardingConsents>(NO_CONSENTS);
   const [docs, setDocs] = useState<Partial<Record<OnboardingDocType, DocState>>>({});
   const [vehicleConfirmed, setVehicleConfirmed] = useState(false);
+  /* Safe Ride matching: AUTOMATIC | MANUAL | BOTH, saved on the chauffeur */
+  const [driveTransmission, setDriveTransmission] = useState("");
   const [standards, setStandards] = useState(false);
   const [assessmentPassed, setAssessmentPassed] = useState(false);
   /* App Basics sections reviewed — saved to the account as each one is opened */
@@ -199,8 +202,9 @@ export default function Onboarding() {
 
   /* Resume saved progress (from the app or the web) */
   useEffect(() => {
-    onboardingApi.get().then(({ exists, onboarding: o, assessmentPassed: passed }) => {
+    onboardingApi.get().then(({ exists, onboarding: o, assessmentPassed: passed, driveTransmission: tx }) => {
       setAssessmentPassed(!!passed);
+      if (tx) setDriveTransmission(tx);
       if (!exists || !o) return;
       /* Past step 5 without passing the assessment (applications started
          before it existed) → back to step 5 to take it */
@@ -377,6 +381,11 @@ export default function Onboarding() {
         return (
           <>
             <Title title="Vehicle" sub="Tell us how you'll be driving with Movo." />
+            <Field label="Safe Ride: which transmissions can you drive?" required>
+              <Text style={s.sub}>On Safe Ride you drive the customer&apos;s own car. Trips are matched to what you can drive.</Text>
+              <Chips value={TX_LABELS[driveTransmission] ?? ""} options={Object.values(TX_LABELS)}
+                onChange={(label) => setDriveTransmission(Object.keys(TX_LABELS).find((k) => TX_LABELS[k] === label) ?? "")} />
+            </Field>
             <Check checked={vehicleOption === "OWN"} onChange={() => setVehicleOption("OWN")}>
               I Have My Own Vehicle — provide your vehicle details and documents for verification.
             </Check>
@@ -411,8 +420,8 @@ export default function Onboarding() {
             {vehicleOption === "RENT" && (
               <Text style={s.sub}>You&apos;ll be able to browse and rent an available Movo vehicle from your chauffeur dashboard once your application is approved.</Text>
             )}
-            <Nav onBack={back} next={() => next({ vehicleOption })} busy={saving}
-              disabled={!vehicleOption || (vehicleOption === "OWN" && (
+            <Nav onBack={back} next={() => next({ vehicleOption, driveTransmission })} busy={saving}
+              disabled={!vehicleOption || !driveTransmission || (vehicleOption === "OWN" && (
                 !vehicleConfirmed || Number(form.vehicleYear) < MIN_VEHICLE_YEAR ||
                 !form.vehicleMake.trim() || !form.vehicleModel.trim() || !form.vehicleColor ||
                 !form.vehiclePlate.trim() || !form.vehicleTier || !VEHICLE_DOCS.every((d) => uploaded(d.key))))} />
