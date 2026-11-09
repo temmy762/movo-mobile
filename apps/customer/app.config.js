@@ -15,5 +15,6 @@ module.exports = ({ config }) => ({
   plugins: [
     ...(config.plugins ?? []),
     ["react-native-maps", { androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_ANDROID_API_KEY }],
+    "./plugins/withNoReleaseLint",
   ],
 });
