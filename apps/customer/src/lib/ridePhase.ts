@@ -59,8 +59,8 @@ export function headline(r: RideDetail, p: RidePhase): { title: string; body: st
 export function cancelPolicy(r: RideDetail, p: RidePhase): string {
   const withinFree = Date.now() - new Date(r.createdAt).getTime() < 5 * 60_000;
   if (!r.driver || p === "searching" || p === "reserved") return "No chauffeur has confirmed yet, so you'll receive a full refund.";
+  /* Safe Ride: $10.00 fee once a chauffeur is assigned — no 5-minute grace */
+  if (r.bookingType === "CARE") return "Your chauffeur is already assigned, so a $10.00 Safe Ride cancellation fee (incl. GST) applies. The rest of your payment is refunded.";
   if (withinFree) return "You're within 5 minutes of booking, so you'll receive a full refund.";
-  return r.bookingType === "CARE"
-    ? "Your chauffeur is already assigned. The return allowance is refunded in full and 50% of the Safe Ride service portion is refunded."
-    : "Your chauffeur is already on the way, so 50% of your fare will be refunded.";
+  return "Your chauffeur is already on the way, so 50% of your fare will be refunded.";
 }
