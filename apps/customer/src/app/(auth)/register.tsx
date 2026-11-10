@@ -9,6 +9,7 @@ import { useSession } from "@/lib/session";
 import { openWeb } from "@/lib/links";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { GoogleButton } from "@/components/GoogleButton";
+import { AppleButton } from "@/components/AppleButton";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -86,8 +87,9 @@ export default function Register() {
           {error && <Text style={styles.error}>{error}</Text>}
           <Button title="Create account" onPress={submit} loading={loading} />
           <GoogleButton onError={setError} />
+          <AppleButton onError={setError} signUp />
           <Text style={styles.small}>
-            By continuing with Google you agree to the{" "}
+            By continuing with Google or Apple you agree to the{" "}
             <Text style={styles.link} onPress={() => openWeb("/privacy-policy")}>Privacy Policy</Text> and{" "}
             <Text style={styles.link} onPress={() => openWeb("/terms")}>Terms &amp; Conditions</Text>.
           </Text>

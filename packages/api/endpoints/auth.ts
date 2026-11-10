@@ -37,3 +37,9 @@ export const forgotPassword = (email: string) =>
    (movoprive://google-auth?code=…) plus the app's PKCE verifier for a session */
 export const googleExchange = (code: string, verifier: string) =>
   request<{ user: ApiUser; token: string }>("/api/auth/google/exchange", { body: { code, verifier } });
+
+/* Sign in with Apple (customer iOS app). rawNonce: the value whose SHA-256 was
+   passed to Apple; Apple shares the name only on the first sign-in. */
+export const appleSignIn = (body: {
+  identityToken: string; rawNonce: string; authorizationCode?: string | null; firstName?: string | null; lastName?: string | null;
+}) => request<{ user: ApiUser; token: string }>("/api/auth/apple", { body });

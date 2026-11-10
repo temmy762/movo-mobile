@@ -6,10 +6,9 @@ import { fonts } from "@movo/ui";
 import { googleErrorMessage, startGoogleSignIn } from "@/lib/googleSignIn";
 import { signInErrorMessage, useSession } from "@/lib/session";
 
-/* App Store guideline 4.8: an iOS app offering Google sign-in must also offer
-   Sign in with Apple (or an equivalent private option), or review rejects it.
-   Off on iOS until that's decided; Android and the web show Google. */
-const SHOW_ON_IOS = false;
+/* iOS shows Sign in with Apple next to it (App Store guideline 4.8 —
+   components/AppleButton); Android and the web offer Google only */
+const SHOW_ON_IOS = true;
 
 function GoogleG() {
   return (
