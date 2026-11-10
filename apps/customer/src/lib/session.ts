@@ -22,6 +22,8 @@ type SessionState = {
   refresh: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (fields: Parameters<typeof auth.register>[0]) => Promise<void>;
+  /** "Continue with Google" — signs in, or creates the rider account on first use */
+  signInWithGoogle: (code: string, verifier: string) => Promise<void>;
   signOut: () => Promise<void>;
   /** Drops the session locally (after account deletion — the server already ended it) */
   clear: () => Promise<void>;
@@ -68,6 +70,11 @@ export const useSession = create<SessionState>((set, get) => ({
 
   async signUp(fields) {
     const { user, token } = await auth.register(fields);
+    await adopt(token, user, set);
+  },
+
+  async signInWithGoogle(code, verifier) {
+    const { user, token } = await auth.googleExchange(code, verifier);
     await adopt(token, user, set);
   },
 

@@ -32,3 +32,8 @@ export const register = (body: {
 /* Always succeeds (the server doesn't reveal whether the email exists) */
 export const forgotPassword = (email: string) =>
   request<{ success: true }>("/api/auth/forgot-password", { body: { email } });
+
+/* "Continue with Google": swap the one-time code from the Google hand-off
+   (movoprive://google-auth?code=…) plus the app's PKCE verifier for a session */
+export const googleExchange = (code: string, verifier: string) =>
+  request<{ user: ApiUser; token: string }>("/api/auth/google/exchange", { body: { code, verifier } });
