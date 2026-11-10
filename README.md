@@ -4,18 +4,25 @@ iOS + Android apps for Movo Privé, built with Expo (React Native) on the same A
 
 | App | Folder | Bundle ID | Deep-link scheme | Status |
 |---|---|---|---|---|
-| Movo Chauffeur | `apps/chauffeur` | `com.movoprive.chauffeur` | `movochauffeur://` | Phase 0 scaffold |
-| Movo Privé (customer) | `apps/customer` | `com.movoprive.app` | — | Phase 3 (not started) |
+| Movo Chauffeur | `apps/chauffeur` | `com.movoprive.chauffeur` | `movochauffeur://` | Feature-complete for launch scope — device testing |
+| Movo Privé (customer) | `apps/customer` | `com.movoprive.app` | `movoprive://` | Feature-complete for launch scope — device testing |
 
 ## Layout
 
 ```
-apps/chauffeur/      Expo app — routes in src/app (expo-router)
+apps/chauffeur/      Chauffeur app — routes in src/app (expo-router)
+apps/customer/       Customer app — routes in src/app (expo-router)
 packages/shared/     Files synced from movo-web (socket events, tiers, launch flags, time, Prisma enums) + API types
 packages/api/        Typed API client (Bearer token, 20s timeout) + socket.io client
 packages/ui/         Design tokens from movo-web globals.css + core components
 scripts/sync-shared.mjs
 ```
+
+## Builds (EAS)
+
+From an app folder: `eas build --profile preview --platform android` (internal APK) or `--profile production` (store build).
+Both apps' `plugins/` turn off Android R8 (it stripped WorkManager's database and crashed on launch); the customer app also skips release lint (Stripe's push-provisioning dependency isn't on public Maven).
+EAS env vars per app: `GOOGLE_SERVICES_JSON` (file, Firebase/FCM) and `GOOGLE_MAPS_ANDROID_API_KEY` (maps).
 
 ## Getting started
 

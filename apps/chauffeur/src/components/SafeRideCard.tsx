@@ -14,6 +14,7 @@ import {
   callNumber, openChat, openNavigation, parts,
 } from "./tripParts";
 import { WalkAround } from "./WalkAround";
+import { EmergencyButton } from "./EmergencyButton";
 
 type SafeRide = ReturnType<typeof useSafeRide>;
 
@@ -138,7 +139,10 @@ export function SafeRideCard({ safe }: { safe: SafeRide }) {
   return (
     <View style={[kit.card, { borderColor: dark.offerBorder, gap: 12 }]}>
       <Header role={a.role} right={
-        <Text style={[kit.dim, { marginLeft: "auto" }]}>#{a.booking.bookingNumber ?? a.booking.id.slice(0, 8)}</Text>
+        <>
+          <Text style={[kit.dim, { marginLeft: "auto" }]}>#{a.booking.bookingNumber ?? a.booking.id.slice(0, 8)}</Text>
+          {safe.phase !== "completed" && <EmergencyButton bookingId={a.booking.id} />}
+        </>
       } />
 
       {safe.coDriver ? <CoDriverRow co={safe.coDriver} /> : primary && !uberReturn && safe.phase !== "completed" ? (

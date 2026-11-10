@@ -248,7 +248,7 @@ export type DriverVehicle = {
 /* ── Chauffeur onboarding (GET/PATCH /api/driver/onboarding) ── */
 
 export type OnboardingDocType =
-  | "PROFILE_PHOTO" | "DRIVERS_LICENSE" | "BACKGROUND_CHECK" | "DRIVERS_ABSTRACT" | "WORK_ELIGIBILITY"
+  | "PROFILE_PHOTO" | "DRIVERS_LICENSE" | "BACKGROUND_CHECK" | "CHILD_ABUSE_REGISTRY" | "DRIVERS_ABSTRACT" | "WORK_ELIGIBILITY"
   | "VEHICLE_REGISTRATION" | "VEHICLE_INSURANCE" | "VEHICLE_PHOTO" | "BANKING_INFO";
 
 export type OnboardingFields = {

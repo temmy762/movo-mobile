@@ -12,3 +12,4 @@ export * as bookings from "./endpoints/bookings";
 export * as rides from "./endpoints/rides";
 export * as payments from "./endpoints/payments";
 export * as notifications from "./endpoints/notifications";
+export * as safety from "./endpoints/safety";

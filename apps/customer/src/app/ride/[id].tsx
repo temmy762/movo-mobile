@@ -19,6 +19,7 @@ import { Icon, colors, fonts } from "@movo/ui";
 import { useSocket } from "@/lib/socket";
 import { RouteChangeSheet } from "@/components/RouteChangeSheet";
 import { TipCard } from "@/components/TipCard";
+import { EmergencyButton } from "@/components/EmergencyButton";
 import { canCancel, cancelPolicy, headline, isLive, ridePhase, type RidePhase } from "@/lib/ridePhase";
 
 const POLL_MS = 8_000;
@@ -184,6 +185,7 @@ export default function Ride() {
         <Pressable onPress={goBack} style={styles.back} accessibilityRole="button" accessibilityLabel="Back">
           <Icon name="back" size={18} color="#374151" strokeWidth={2.5} />
         </Pressable>
+        {live && <EmergencyButton bookingId={r.id} />}
       </SafeAreaView>
 
       <ScrollView style={styles.sheet} contentContainerStyle={styles.sheetBody}>
@@ -405,7 +407,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F5F5F2" },
   center: { alignItems: "center", justifyContent: "center", gap: 10 },
   map: { height: "42%" },
-  topBar: { position: "absolute", top: 0, left: 0, right: 0, paddingHorizontal: 16, paddingTop: 8 },
+  topBar: { position: "absolute", top: 0, left: 0, right: 0, paddingHorizontal: 16, paddingTop: 8, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   back: { width: 40, height: 40, borderRadius: 14, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 6, elevation: 3 },
   car: { width: 26, height: 26, borderRadius: 13, backgroundColor: "rgba(19,25,54,0.25)", alignItems: "center", justifyContent: "center" },
   carDot: { width: 14, height: 14, borderRadius: 7, backgroundColor: colors.navy, borderWidth: 2, borderColor: "#fff" },

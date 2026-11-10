@@ -37,7 +37,8 @@ const gradient = ["#1a1a2e", "#131936", "#C6BFB2"] as const;
 
 const PERSONAL_DOCS: { key: OnboardingDocType; label: string }[] = [
   { key: "DRIVERS_LICENSE", label: "Driver's License" },
-  { key: "BACKGROUND_CHECK", label: "Background Check" },
+  { key: "BACKGROUND_CHECK", label: "Criminal Record Check" },
+  { key: "CHILD_ABUSE_REGISTRY", label: "Child Abuse Registry Check" },
   { key: "DRIVERS_ABSTRACT", label: "Driver's Abstract" },
   { key: "WORK_ELIGIBILITY", label: "Proof of Work Eligibility" },
 ];
@@ -47,7 +48,7 @@ const VEHICLE_DOCS: { key: OnboardingDocType; label: string }[] = [
   { key: "VEHICLE_PHOTO", label: "Vehicle Photos (interior/exterior)" },
 ];
 const DOC_LABELS: Record<string, string> = {
-  PROFILE_PHOTO: "Profile Photo", DRIVERS_LICENSE: "Driver's License", BACKGROUND_CHECK: "Background Check",
+  PROFILE_PHOTO: "Profile Photo", DRIVERS_LICENSE: "Driver's License", BACKGROUND_CHECK: "Criminal Record Check", CHILD_ABUSE_REGISTRY: "Child Abuse Registry",
   DRIVERS_ABSTRACT: "Driver's Abstract", WORK_ELIGIBILITY: "Work Eligibility", VEHICLE_REGISTRATION: "Vehicle Registration",
   VEHICLE_INSURANCE: "Vehicle Insurance", VEHICLE_PHOTO: "Vehicle Photos",
 };
@@ -562,8 +563,8 @@ export default function Onboarding() {
           );
         }
         const docTypes: OnboardingDocType[] = vehicleOption === "RENT"
-          ? ["PROFILE_PHOTO", "DRIVERS_LICENSE", "BACKGROUND_CHECK", "DRIVERS_ABSTRACT", "WORK_ELIGIBILITY"]
-          : ["PROFILE_PHOTO", "DRIVERS_LICENSE", "BACKGROUND_CHECK", "DRIVERS_ABSTRACT", "WORK_ELIGIBILITY", "VEHICLE_REGISTRATION", "VEHICLE_INSURANCE", "VEHICLE_PHOTO"];
+          ? ["PROFILE_PHOTO", "DRIVERS_LICENSE", "BACKGROUND_CHECK", "CHILD_ABUSE_REGISTRY", "DRIVERS_ABSTRACT", "WORK_ELIGIBILITY"]
+          : ["PROFILE_PHOTO", "DRIVERS_LICENSE", "BACKGROUND_CHECK", "CHILD_ABUSE_REGISTRY", "DRIVERS_ABSTRACT", "WORK_ELIGIBILITY", "VEHICLE_REGISTRATION", "VEHICLE_INSURANCE", "VEHICLE_PHOTO"];
         const count = docTypes.filter(uploaded).length;
         const items = [
           { label: "Personal information", ok: DOB.test(form.dob) && !!form.licenseNumber, back: 2 },

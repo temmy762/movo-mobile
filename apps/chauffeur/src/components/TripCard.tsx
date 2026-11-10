@@ -13,6 +13,7 @@ import {
   Banner, GradientButton, HandBackModal, RatingModal, RedOutlineButton, SquareButton, WaitingBanner,
   callNumber, openChat, openNavigation, parts,
 } from "./tripParts";
+import { EmergencyButton } from "./EmergencyButton";
 
 export function TripCard({ booking, onFinished }: {
   booking: DriverBooking;
@@ -36,6 +37,7 @@ export function TripCard({ booking, onFinished }: {
         <Icon name="check" size={16} color={dark.green} />
         <Text style={kit.cardTitle}>{title}</Text>
         <Text style={[kit.dim, { marginLeft: "auto" }]}>#{number}</Text>
+        <EmergencyButton bookingId={booking.id} />
       </View>
 
       <View style={kit.between}>

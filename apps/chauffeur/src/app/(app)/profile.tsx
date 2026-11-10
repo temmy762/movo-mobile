@@ -166,6 +166,8 @@ export default function Profile() {
         </Section>
 
         <Section title="Support & legal">
+          <Row icon="list" label="Help & policies" onPress={() => router.push("/help")} />
+          <Divider />
           <Row icon="mail" label="Contact support" onPress={() => emailSupport()} />
           <Divider />
           <Row icon="list" label="Terms of service" onPress={() => openWeb("/terms")} />

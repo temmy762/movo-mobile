@@ -73,6 +73,10 @@ export default function Profile() {
           {p?.phone ? <Text style={styles.detail}>{p.phone}</Text> : null}
         </Card>
 
+        <Section title="Account">
+          <Row icon="user" label="Personal info" onPress={() => router.push("/edit-profile")} />
+        </Section>
+
         <Section title="Payments">
           <Row icon="wallet" label="Payment methods" onPress={() => router.push("/payment-methods")} />
           <Divider />
@@ -80,6 +84,8 @@ export default function Profile() {
         </Section>
 
         <Section title="Support">
+          <Row icon="list" label="Help & FAQs" onPress={() => router.push("/help")} />
+          <Divider />
           <Row icon="mail" label="Contact support" onPress={() => emailSupport()} />
           <Divider />
           <Row icon="list" label="Lost & found policy" onPress={() => openWeb("/lost-found-policy")} />
