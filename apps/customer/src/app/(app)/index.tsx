@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   bell: { width: 38, height: 38, borderRadius: 19, backgroundColor: "#f3f4f6", alignItems: "center", justifyContent: "center" },
   badge: { position: "absolute", top: -2, right: -2, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: "#dc2626", alignItems: "center", justifyContent: "center" },
   badgeText: { fontFamily: fonts.bodySemi, fontSize: 10, color: "#fff" },
-  logo: { width: 110, height: 28 },
+  logo: { width: 72, height: 40 },
   banner: { height: 190, justifyContent: "flex-end" },
   hello: { fontFamily: fonts.heading, fontSize: 24, color: "#fff", padding: 20 },
   page: { paddingHorizontal: 16, paddingTop: 14 },

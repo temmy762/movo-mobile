@@ -139,12 +139,12 @@ export function ArrivalIntro({ tagline, ready, onDone }: { tagline: string; read
 
         <View style={styles.markWrap} pointerEvents="none">
           <Animated.View style={{ opacity: markOpacity, transform: [{ perspective: 600 }, { rotateY }] }}>
-            <Svg width={86} height={86 * 124.47 / 130.16} viewBox={MARK.viewBox}>
+            <Svg width={86} height={86 * 93.79 / 98.08} viewBox={MARK.viewBox}>
               {MARK.paths.map((d, i) => <Path key={i} d={d} fill={IVORY} />)}
             </Svg>
           </Animated.View>
           <Animated.View style={{ opacity: text, transform: [{ translateY: rise }], alignItems: "center", gap: 16 }}>
-            <Svg width={128} height={128 * 112.69 / 202.12} viewBox={WORDMARK.viewBox}>
+            <Svg width={168} height={168 * 93.4 / 387.5} viewBox={WORDMARK.viewBox}>
               {WORDMARK.paths.map((d, i) => <Path key={i} d={d} fill={IVORY} />)}
             </Svg>
             <Animated.Text style={styles.tagline}>{tagline.toUpperCase()}</Animated.Text>
