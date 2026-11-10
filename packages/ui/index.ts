@@ -6,3 +6,5 @@ export * from "./components/StatusBadge";
 export * from "./components/MovoText";
 export * from "./components/Icon";
 export * from "./components/UpdateRequired";
+export * from "./components/ArrivalIntro";
+export * from "./components/Welcome";

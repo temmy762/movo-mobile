@@ -8,6 +8,7 @@
     "expo-linear-gradient": "*",
     "react": "*",
     "react-native": "*",
-    "react-native-svg": "*"
+    "react-native-svg": "*",
+    "react-native-safe-area-context": "*"
   }
 }
