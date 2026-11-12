@@ -25,6 +25,13 @@ type SessionState = {
   signIn: (email: string, password: string) => Promise<void>;
   /** Creates the chauffeur account and signs in; the application comes next */
   signUp: (fields: Parameters<typeof auth.driverRegister>[0]) => Promise<void>;
+  /** Google / Apple: an existing chauffeur is signed in; a new one gets
+      pendingSignup and the "Complete your account" screen. Returns which. */
+  signInWithGoogle: (code: string, verifier: string) => Promise<"signed-in" | "signup">;
+  signInWithApple: (body: Parameters<typeof auth.driverAppleSignIn>[0]) => Promise<"signed-in" | "signup">;
+  /** New chauffeur from Google / Apple, waiting for name + mobile number */
+  pendingSignup: (auth.DriverSocialSignup & { authorizationCode?: string | null }) | null;
+  completeSocialSignup: (fields: { firstName: string; lastName: string; phone: string }) => Promise<void>;
   signOut: () => Promise<void>;
   /** Drops the session locally (after account deletion — the server already ended it) */
   clear: () => Promise<void>;
@@ -35,6 +42,7 @@ export const useSession = create<SessionState>((set, get) => ({
   token: null,
   driver: null,
   justRegistered: false,
+  pendingSignup: null,
 
   async restore() {
     const token = await SecureStore.getItemAsync(TOKEN_KEY);
@@ -68,6 +76,22 @@ export const useSession = create<SessionState>((set, get) => ({
     set({ token, driver, justRegistered: true });
   },
 
+  async signInWithGoogle(code, verifier) {
+    return adoptSocial(await auth.driverGoogleExchange(code, verifier), null, set);
+  },
+
+  async signInWithApple(body) {
+    return adoptSocial(await auth.driverAppleSignIn(body), body.authorizationCode ?? null, set);
+  },
+
+  async completeSocialSignup(fields) {
+    const pending = get().pendingSignup;
+    if (!pending) throw new ApiError(401, "This sign-up has expired. Please tap Continue with Google or Apple again.");
+    const { driver, token } = await auth.driverSocialComplete({ ticket: pending.ticket, authorizationCode: pending.authorizationCode, ...fields });
+    await SecureStore.setItemAsync(TOKEN_KEY, token);
+    set({ token, driver, justRegistered: true, pendingSignup: null });
+  },
+
   async signOut() {
     if (get().token) await auth.logout().catch(() => {});
     await get().clear();
@@ -79,6 +103,20 @@ export const useSession = create<SessionState>((set, get) => ({
     set({ token: null, driver: null });
   },
 }));
+
+async function adoptSocial(
+  res: auth.DriverSocialResult,
+  authorizationCode: string | null,
+  set: (s: Partial<SessionState>) => void,
+): Promise<"signed-in" | "signup"> {
+  if ("signup" in res) {
+    set({ pendingSignup: { ...res, authorizationCode } });
+    return "signup";
+  }
+  await SecureStore.setItemAsync(TOKEN_KEY, res.token);
+  set({ token: res.token, driver: res.driver, pendingSignup: null });
+  return "signed-in";
+}
 
 /* Same wording as the web login page */
 export function signInErrorMessage(e: unknown): string {

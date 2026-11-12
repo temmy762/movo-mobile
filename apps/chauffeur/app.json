@@ -11,7 +11,8 @@
       "bundleIdentifier": "com.movoprive.chauffeur",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
@@ -76,7 +77,8 @@
             "./assets/sounds/ride_request.wav"
           ]
         }
-      ]
+      ],
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true

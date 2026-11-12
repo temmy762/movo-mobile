@@ -19,6 +19,28 @@ export const driverRegister = (body: {
   firstName: string; lastName: string; email: string; phone?: string; password: string; country: string; city: string;
 }) => request<{ driver: ApiDriver; token: string }>("/api/auth/driver/register", { body });
 
+/* Chauffeur Google / Apple sign-in: a session for an existing chauffeur, or —
+   new chauffeur — what "Complete your account" shows plus a 15-minute ticket */
+export type DriverSocialSignup = {
+  signup: { provider: "google" | "apple"; firstName: string; lastName: string; email: string };
+  ticket: string;
+};
+export type DriverSocialResult = { driver: ApiDriver; token: string } | DriverSocialSignup;
+
+/* Code from movochauffeur://google-auth?code=… plus the app's PKCE verifier */
+export const driverGoogleExchange = (code: string, verifier: string) =>
+  request<DriverSocialResult>("/api/auth/driver/google/exchange", { body: { code, verifier } });
+
+/* rawNonce: the value whose SHA-256 was passed to Apple */
+export const driverAppleSignIn = (body: {
+  identityToken: string; rawNonce: string; authorizationCode?: string | null; firstName?: string | null; lastName?: string | null;
+}) => request<DriverSocialResult>("/api/auth/driver/apple", { body });
+
+/* Creates the account. 409 = phone already used; 401 = ticket expired. */
+export const driverSocialComplete = (body: {
+  ticket: string; firstName: string; lastName: string; phone: string; authorizationCode?: string | null;
+}) => request<{ driver: ApiDriver; token: string }>("/api/auth/driver/social/complete", { body });
+
 /* ── Customers (riders) ── */
 
 export const login = (email: string, password: string) =>

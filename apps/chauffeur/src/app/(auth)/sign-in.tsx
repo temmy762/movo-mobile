@@ -7,6 +7,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Link, router } from "expo-router";
 import { Button, Icon, Input, colors, fontSizes, fonts, gradients, spacing } from "@movo/ui";
 import { signInErrorMessage, useSession } from "@/lib/session";
+import { GoogleButton } from "@/components/GoogleButton";
+import { AppleButton } from "@/components/AppleButton";
 
 export default function SignIn() {
   const signIn = useSession((s) => s.signIn);
@@ -76,6 +78,8 @@ export default function SignIn() {
               {error && <Text style={styles.error}>{error}</Text>}
 
               <Button title="Log In" onPress={submit} loading={loading} />
+              <GoogleButton onError={setError} />
+              <AppleButton onError={setError} />
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
