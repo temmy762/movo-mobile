@@ -12,7 +12,7 @@ import { useState, type ReactNode } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
+import { router, usePreventRemove } from "expo-router";
 import { ApiError, bookings as bookingsApi } from "@movo/api";
 import { winnipegDateTime, type FareEstimate, type SafeRideVehicle } from "@movo/shared";
 import { Icon, colors, fonts } from "@movo/ui";
@@ -199,6 +199,12 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
       setBusy(false);
     }
   };
+
+  /* Android back / iOS swipe: paid but not booked → stay to finish; otherwise step back through the form */
+  usePreventRemove(!bookedId && (!!paidIntent || step > 1), () => {
+    if (paidIntent) setError("Your payment went through. Tap Finish booking to complete it (you won't be charged twice).");
+    else go(step - 1);
+  });
 
   if (bookedId) {
     return (

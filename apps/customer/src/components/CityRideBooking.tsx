@@ -8,6 +8,7 @@ import { useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
+import { usePreventRemove } from "expo-router";
 import { ApiError, bookings as bookingsApi } from "@movo/api";
 import { CUSTOMER_RIDE_TIERS, winnipegDateTime, type FareEstimate } from "@movo/shared";
 import { colors, fonts } from "@movo/ui";
@@ -59,8 +60,10 @@ export function CityRideBooking({ initialDropoff }: { initialDropoff?: string })
   const getPrice = async () => {
     setError(null);
     if (!pickup || !dropoff) return setError("Please choose your pickup and destination.");
+    if (pickup.trim().toLowerCase() === dropoff.trim().toLowerCase()) return setError("Pickup and destination can't be the same address.");
     if (reserve && !scheduledAt) return setError("Please choose a pickup time.");
     if (forOther && (!riderName.trim() || !riderPhone.trim())) return setError("Please enter the rider's name and mobile number.");
+    if (forOther && riderPhone.replace(/\D/g, "").length < 10) return setError("Please enter a valid mobile number for the rider.");
     setLoading(true);
     try {
       setEstimate(await bookingsApi.estimate({ pickup, dropoff, tier: TIER, pickupTime: scheduledAt }));
@@ -104,6 +107,10 @@ export function CityRideBooking({ initialDropoff }: { initialDropoff?: string })
       setPaying(false);
     }
   };
+
+  /* Paid but not booked yet: stay here (back button / swipe) so the rider can finish */
+  usePreventRemove(!!paidIntent && !booked, () =>
+    setError("Your payment went through. Tap Finish booking to complete it (you won't be charged twice)."));
 
   if (booked) {
     return (
