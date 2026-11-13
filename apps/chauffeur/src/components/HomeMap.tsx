@@ -1,13 +1,15 @@
 /**
  * Map on Home (the web home's map): the chauffeur's own position, and during
  * a ride the pickup / drop-off pins, framed together, plus the rider's live
- * position while heading to pickup (it moves; the map doesn't re-frame). Google Maps on Android
+ * position while heading to pickup (it moves; the map doesn't re-frame), and
+ * the road route from the chauffeur to where they're heading. Google Maps on Android
  * (key from app.config.js), Apple Maps on iOS.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import MapView, { Marker, type LatLng } from "react-native-maps";
+import MapView, { Marker, Polyline, type LatLng } from "react-native-maps";
 import { colors } from "@movo/ui";
+import { useRoadRoute } from "@/lib/useRoadRoute";
 import { dark } from "./homeKit";
 
 export type MapPin = { coordinate: LatLng; kind: "pickup" | "dropoff" | "rider"; title: string };
@@ -26,10 +28,14 @@ const DARK_STYLE = [
   { featureType: "water", elementType: "geometry", stylers: [{ color: "#0e1220" }] },
 ];
 
-export function HomeMap({ pins, height = 220 }: { pins: MapPin[]; height?: number }) {
+/* routeTo: where the chauffeur is heading now (pickup, then drop-off) — a route line from their position */
+export function HomeMap({ pins, routeTo = null, height = 220 }: { pins: MapPin[]; routeTo?: LatLng | null; height?: number }) {
   const map = useRef<MapView>(null);
   const centred = useRef(false);
   const me = useRef<LatLng | null>(null);
+  /* Position for the route line, updated every ~100 m (not every GPS fix) */
+  const [routeFrom, setRouteFrom] = useState<LatLng | null>(null);
+  const route = useRoadRoute(routeTo ? routeFrom : null, routeTo);
   /* Re-frame for the ride's fixed pins only — the rider's position moves */
   const key = pins.filter((p) => p.kind !== "rider").map((p) => `${p.coordinate.latitude},${p.coordinate.longitude}`).join("|");
 
@@ -60,6 +66,8 @@ export function HomeMap({ pins, height = 220 }: { pins: MapPin[]; height?: numbe
           const c = e.nativeEvent.coordinate;
           if (!c) return;
           me.current = { latitude: c.latitude, longitude: c.longitude };
+          setRouteFrom((prev) => prev && Math.abs(prev.latitude - c.latitude) < 0.001 && Math.abs(prev.longitude - c.longitude) < 0.001
+            ? prev : { latitude: c.latitude, longitude: c.longitude });
           /* Centre on the chauffeur the first time a fix arrives */
           if (!centred.current) {
             centred.current = true;
@@ -67,6 +75,10 @@ export function HomeMap({ pins, height = 220 }: { pins: MapPin[]; height?: numbe
           }
         }}
       >
+        {route && (
+          <Polyline coordinates={route.coordinates} strokeColor={colors.taupe} strokeWidth={4}
+            lineDashPattern={route.exact ? undefined : [8, 8]} />
+        )}
         {pins.map((p) => p.kind === "rider" ? (
           <Marker key="rider" coordinate={p.coordinate} title={p.title} anchor={{ x: 0.5, y: 0.5 }}>
             <View style={styles.rider}><View style={styles.riderDot} /></View>

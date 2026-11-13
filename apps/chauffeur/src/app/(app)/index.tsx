@@ -105,6 +105,8 @@ export default function Home() {
      the customer app / web); gone once the trip starts */
   const rideId = ride?.id;
   const [rider, setRider] = useState<{ bookingId: string; lat: number; lng: number } | null>(null);
+  /* Standard ride started (the trip card's own state isn't lifted here) */
+  const [startedRideId, setStartedRideId] = useState<string | null>(null);
   useEffect(() => {
     if (!rideId) return;
     const offLoc = on(SOCKET_EVENTS.RIDER_LOCATION, (data) => {
@@ -114,13 +116,24 @@ export default function Home() {
       }
     });
     const offStart = on(SOCKET_EVENTS.TRIP_STARTED, (data) => {
-      if ((data as { bookingId?: string }).bookingId === rideId) setRider(null);
+      if ((data as { bookingId?: string }).bookingId === rideId) { setRider(null); setStartedRideId(rideId); }
     });
     return () => { offLoc(); offStart(); };
   }, [rideId, on]);
   if (rider && rider.bookingId === rideId) {
     pins.push({ kind: "rider", title: "Your rider", coordinate: { latitude: rider.lat, longitude: rider.lng } });
   }
+
+  /* Route line: to the pickup, then — once the trip starts — to the drop-off.
+     Safe Ride: the Primary chauffeur's two legs; the Support chauffeur's
+     journey has other stops, so it shows the pins only. */
+  const pickupPin = pins.find((p) => p.kind === "pickup")?.coordinate ?? null;
+  const dropoffPin = pins.find((p) => p.kind === "dropoff")?.coordinate ?? null;
+  const routeTo = requests.phase === "accepted"
+    ? (requests.booking?.startedAt || startedRideId === rideId ? dropoffPin : pickupPin)
+    : safe.assignment?.role === "PRIMARY"
+      ? (safe.phase === "accepted" || safe.phase === "arrived" ? pickupPin : safe.phase === "started" ? dropoffPin : null)
+      : null;
 
   return (
     <View style={{ flex: 1, backgroundColor: dark.bg }}>
@@ -166,7 +179,7 @@ export default function Home() {
             </Pressable>
           )}
 
-          <HomeMap pins={pins} />
+          <HomeMap pins={pins} routeTo={routeTo} />
 
           {/* Ride requests */}
           {safe.phase === "requesting" && safe.assignment ? (

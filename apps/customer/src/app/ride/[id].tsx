@@ -10,12 +10,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import MapView, { Marker, type LatLng } from "react-native-maps";
+import MapView, { Marker, Polyline, type LatLng } from "react-native-maps";
 import * as Location from "expo-location";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, rides } from "@movo/api";
 import { SOCKET_EVENTS, type DriverPosition } from "@movo/shared";
 import { Icon, colors, fonts } from "@movo/ui";
+import { useRoadRoute } from "@/lib/useRoadRoute";
 import { useSocket } from "@/lib/socket";
 import { RouteChangeSheet } from "@/components/RouteChangeSheet";
 import { TipCard } from "@/components/TipCard";
@@ -109,6 +110,14 @@ export default function Ride() {
   const dropoffPt: LatLng | null = r?.dropoffLat != null && r.dropoffLng != null ? { latitude: r.dropoffLat, longitude: r.dropoffLng } : null;
   const driverPt: LatLng | null = position && live && hasDriver ? { latitude: position.lat, longitude: position.lng } : null;
 
+  /* Route line: chauffeur → pickup on the way, chauffeur → destination during
+     the trip, otherwise the trip itself (pickup → destination) */
+  const routeEnds: [LatLng | null, LatLng | null] =
+    driverPt && phase === "in_progress" ? [driverPt, dropoffPt]
+      : driverPt && phase === "on_the_way" ? [driverPt, pickupPt]
+        : live && phase !== "arrived" && phase !== "in_progress" ? [pickupPt, dropoffPt] : [null, null];
+  const route = useRoadRoute(routeEnds[0], routeEnds[1]);
+
   /* Frame what matters now: chauffeur → pickup before the trip, → drop-off during it */
   const frameKey = [phase, !!driverPt, pickupPt?.latitude, dropoffPt?.latitude].join("|");
   useEffect(() => {
@@ -173,6 +182,10 @@ export default function Ride() {
   return (
     <View style={styles.screen}>
       <MapView ref={map} style={styles.map} initialRegion={WINNIPEG} showsUserLocation={live} toolbarEnabled={false}>
+        {route && (
+          <Polyline coordinates={route.coordinates} strokeColor={colors.navy} strokeWidth={4}
+            lineDashPattern={route.exact ? undefined : [8, 8]} />
+        )}
         {pickupPt && <Marker coordinate={pickupPt} title="Pickup" pinColor={colors.navy} />}
         {dropoffPt && <Marker coordinate={dropoffPt} title="Destination" pinColor="#ef4444" />}
         {driverPt && (
