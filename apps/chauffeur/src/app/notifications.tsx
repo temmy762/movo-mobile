@@ -2,17 +2,19 @@
  * Notifications — the chauffeur's in-app notifications from the server
  * (booking assigned / cancelled, payouts, application status, Safe Ride
  * pickup updates…), newest first. Tapping one marks it read and opens Home
- * (rides) or the Wallet (payouts). Push on/off lives in the phone's settings.
+ * (rides) or the Wallet (payouts). The Settings tab turns alerts on and picks
+ * their sounds (?tab=settings opens it).
  */
-import { useCallback } from "react";
-import { ActivityIndicator, FlatList, Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useState } from "react";
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { notifications as notifApi } from "@movo/api";
 import { MOVO_TZ, type AppNotification } from "@movo/shared";
 import { colors, fonts } from "@movo/ui";
 import { ScreenHeader } from "@/components/ScreenHeader";
+import { NotificationSettings } from "@/components/NotificationSettings";
 
 /* "Today, 3:50 PM" / "Oct 14, 3:50 PM" — Winnipeg time */
 function when(iso: string) {
@@ -24,6 +26,8 @@ function when(iso: string) {
 }
 
 export default function Notifications() {
+  const params = useLocalSearchParams<{ tab?: string }>();
+  const [tab, setTab] = useState<"inbox" | "settings">(params.tab === "settings" ? "settings" : "inbox");
   const queryClient = useQueryClient();
   const list = useQuery({ queryKey: ["notifications"], queryFn: () => notifApi.list() });
   const { refetch } = list;
@@ -47,7 +51,17 @@ export default function Notifications() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#F5F5F2" }}>
       <ScreenHeader title="Notifications" subtitle={unread ? `${unread} unread` : undefined} />
-      {list.isPending ? (
+      <View style={styles.tabs} accessibilityRole="tablist">
+        {(["inbox", "settings"] as const).map((t) => (
+          <Pressable key={t} onPress={() => setTab(t)} style={[styles.tab, tab === t && styles.tabOn]}
+            accessibilityRole="tab" accessibilityState={{ selected: tab === t }}>
+            <Text style={[styles.tabText, tab === t && styles.tabTextOn]}>{t === "inbox" ? "Inbox" : "Settings"}</Text>
+          </Pressable>
+        ))}
+      </View>
+      {tab === "settings" ? (
+        <NotificationSettings />
+      ) : list.isPending ? (
         <ActivityIndicator style={{ marginTop: 40 }} color={colors.navy} />
       ) : (
         <FlatList
@@ -80,12 +94,6 @@ export default function Notifications() {
               </View>
             </Pressable>
           )}
-          ListFooterComponent={
-            <Pressable onPress={() => Linking.openSettings()} style={styles.settings} accessibilityRole="button">
-              <Text style={styles.muted}>Turn push notifications on or off in your phone&apos;s settings for Movo Chauffeur.</Text>
-              <Text style={styles.link}>Open settings</Text>
-            </Pressable>
-          }
         />
       )}
     </SafeAreaView>
@@ -105,6 +113,9 @@ const styles = StyleSheet.create({
   empty: { alignItems: "center", gap: 6, paddingVertical: 56, paddingHorizontal: 24 },
   emptyTitle: { fontFamily: fonts.bodySemi, fontSize: 15, color: "#374151" },
   muted: { fontFamily: fonts.body, fontSize: 12, color: "#6b7280", textAlign: "center", lineHeight: 17 },
-  settings: { alignItems: "center", gap: 4, paddingTop: 20 },
-  link: { fontFamily: fonts.bodySemi, fontSize: 13, color: colors.navy },
+  tabs: { flexDirection: "row", margin: 16, marginBottom: 0, padding: 4, borderRadius: 14, backgroundColor: "#e9e8e3" },
+  tab: { flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: "center" },
+  tabOn: { backgroundColor: "#fff" },
+  tabText: { fontFamily: fonts.body, fontSize: 13, color: "#6b7280" },
+  tabTextOn: { fontFamily: fonts.bodySemi, color: colors.navy },
 });

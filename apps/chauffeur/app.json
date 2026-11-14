@@ -74,7 +74,10 @@
           "color": "#131936",
           "defaultChannel": "default",
           "sounds": [
-            "./assets/sounds/ride_request.wav"
+            "./assets/sounds/ride_request.wav",
+            "./assets/sounds/chime.wav",
+            "./assets/sounds/bell.wav",
+            "./assets/sounds/rise.wav"
           ]
         }
       ],

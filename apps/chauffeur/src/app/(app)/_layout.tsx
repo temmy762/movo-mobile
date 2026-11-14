@@ -10,6 +10,7 @@ export default function AppTabs() {
   /* A rider's message opens the chat; every other alert is handled on Home
      (requests, trips, Safe Ride), which re-reads its state on foreground */
   useEffect(() => onNotificationTap((data) => {
+    if (data.type === "test") return;
     if (data.type === "new_message_driver" && data.bookingId) router.navigate({ pathname: "/chat/[bookingId]", params: { bookingId: data.bookingId } });
     else router.navigate("/");
   }), []);

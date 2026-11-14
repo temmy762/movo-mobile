@@ -9,6 +9,7 @@ export default function AppTabs() {
 
   /* A ride update opens that ride */
   useEffect(() => onNotificationTap((data) => {
+    if (data.type === "test") return;
     if (data.bookingId) router.navigate({ pathname: "/ride/[id]", params: { id: data.bookingId } });
     else router.navigate("/");
   }), []);

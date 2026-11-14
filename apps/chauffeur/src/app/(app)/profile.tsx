@@ -151,6 +151,7 @@ export default function Profile() {
 
         <Section title="Updates">
           <Row icon="bell" label={unreadCount ? `Notifications (${unreadCount} new)` : "Notifications"} onPress={() => router.push("/notifications")} />
+          <Row icon="bell" label="Notification sounds" onPress={() => router.push({ pathname: "/notifications", params: { tab: "settings" } })} />
         </Section>
 
         <Section title="Vehicle & payments">

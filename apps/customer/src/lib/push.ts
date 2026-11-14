@@ -15,6 +15,7 @@ import { isRunningInExpoGo } from "expo";
 import * as Device from "expo-device";
 import * as SecureStore from "expo-secure-store";
 import { push as pushApi } from "@movo/api";
+import { UPDATE_SOUNDS, getUpdateSound, iosSound, saveUpdateSound, soundLabel, updateChannelId } from "./alertSounds";
 
 const PUSH_TOKEN_KEY = "movo_push_token";
 
@@ -42,23 +43,80 @@ export async function registerForPush(): Promise<void> {
   if (!N || !Device.isDevice || !id) return;
 
   try {
-    if (Platform.OS === "android") {
-      await N.setNotificationChannelAsync("default", {
-        name: "Ride updates",
-        importance: N.AndroidImportance.HIGH,
-        lightColor: "#C6BFB2",
-      });
-    }
+    const sound = await getUpdateSound();
+    await ensureChannels(N, sound);
     let { status } = await N.getPermissionsAsync();
     if (status !== "granted") ({ status } = await N.requestPermissionsAsync());
     if (status !== "granted") return;
 
     const { data: token } = await N.getExpoPushTokenAsync({ projectId: id });
-    await pushApi.registerDevice(token, Platform.OS === "ios" ? "ios" : "android", "customer");
+    await pushApi.registerDevice(token, Platform.OS === "ios" ? "ios" : "android", "customer", { updates: sound });
     await SecureStore.setItemAsync(PUSH_TOKEN_KEY, token);
   } catch (e) {
     console.warn("[push] registration failed", e);
   }
+}
+
+/* "default" always exists (older pushes use it); plus the picked sound's
+   channel. Channels for sounds no longer picked are removed so the phone's
+   settings list only shows the one in use. */
+async function ensureChannels(N: typeof import("expo-notifications"), sound: string) {
+  if (Platform.OS !== "android") return;
+  await N.setNotificationChannelAsync("default", {
+    name: "Ride updates",
+    importance: N.AndroidImportance.HIGH,
+    lightColor: "#C6BFB2",
+  });
+  const picked = updateChannelId(sound);
+  if (picked !== "default") {
+    await N.setNotificationChannelAsync(picked, {
+      name: `Ride updates (${soundLabel(sound)})`,
+      importance: N.AndroidImportance.HIGH,
+      sound: sound === "silent" ? null : `${sound}.wav`,
+      enableVibrate: true,
+      vibrationPattern: [0, 250, 200, 250],
+      lightColor: "#C6BFB2",
+    });
+  }
+  const stale = UPDATE_SOUNDS.map((o) => updateChannelId(o.id)).filter((c) => c !== "default" && c !== picked);
+  await Promise.all(stale.map((c) => N.deleteNotificationChannelAsync(c).catch(() => {})));
+}
+
+export type PushStatus = "on" | "off" | "blocked" | "unavailable";
+
+/** Whether alerts can reach this phone: off = can ask, blocked = only the phone's settings can turn them on */
+export async function getPushStatus(): Promise<PushStatus> {
+  const N = Notifications;
+  if (!N || !Device.isDevice) return "unavailable";
+  const p = await N.getPermissionsAsync();
+  return p.status === "granted" ? "on" : p.canAskAgain ? "off" : "blocked";
+}
+
+/** Asks for permission and registers this phone; returns the new status */
+export async function enablePush(): Promise<PushStatus> {
+  await registerForPush();
+  return getPushStatus();
+}
+
+/** Saves the picked sound and tells movo-web, so the next alert uses it */
+export async function setAlertSound(sound: string): Promise<void> {
+  await saveUpdateSound(sound);
+  const N = Notifications;
+  if (!N) return;
+  await ensureChannels(N, sound).catch(() => {});
+  const token = await SecureStore.getItemAsync(PUSH_TOKEN_KEY).catch(() => null);
+  if (token) await pushApi.registerDevice(token, Platform.OS === "ios" ? "ios" : "android", "customer", { updates: sound });
+}
+
+/** A sample alert right now, on the picked sound's channel */
+export async function sendTestNotification(): Promise<void> {
+  const N = Notifications;
+  if (!N) return;
+  const sound = await getUpdateSound();
+  await N.scheduleNotificationAsync({
+    content: { title: "Movo Privé", body: "This is how your ride updates will sound.", sound: iosSound(sound) ?? false, data: { type: "test" } },
+    trigger: Platform.OS === "android" ? { channelId: updateChannelId(sound) } : null,
+  });
 }
 
 type PushData = { type?: string; bookingId?: string };
