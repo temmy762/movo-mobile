@@ -18,8 +18,8 @@ import Constants from "expo-constants";
 import { isRunningInExpoGo } from "expo";
 import * as Device from "expo-device";
 import * as SecureStore from "expo-secure-store";
-import { push as pushApi } from "@movo/api";
-import { SOUND_OPTIONS, channelId, getSound, getSounds, iosSound, saveSound, soundLabel, type SoundKind } from "./alertSounds";
+import { ApiError, push as pushApi } from "@movo/api";
+import { SOUND_OPTIONS, channelId, getSounds, iosSound, saveSound, soundLabel, type SoundKind } from "./alertSounds";
 
 const PUSH_TOKEN_KEY = "movo_push_token";
 /* Same key as lib/location.ts ONLINE_KEY — read directly: importing the shift
@@ -155,11 +155,30 @@ export async function setAlertSound(kind: SoundKind, sound: string): Promise<voi
   if (token) await pushApi.registerDevice(token, Platform.OS === "ios" ? "ios" : "android", "chauffeur", sounds);
 }
 
-/** A sample alert right now, on the picked sound's channel */
+/**
+ * A test alert. Sent through movo-web and the push service — the same path
+ * and sound as real alerts — so it proves alerts reach this phone. If the
+ * server can't be reached, a local alert on the picked channel instead.
+ * Throws with a message the screen can show.
+ */
 export async function sendTestNotification(kind: SoundKind): Promise<void> {
   const N = Notifications;
-  if (!N) return;
-  const sound = await getSound(kind);
+  if (!N) throw new Error("Notifications aren't available in this version of the app.");
+  if ((await N.getPermissionsAsync()).status !== "granted") throw new Error("Turn notifications on first.");
+  const sounds = await getSounds();
+  await ensureChannels(N, sounds).catch(() => {});
+
+  let token = await SecureStore.getItemAsync(PUSH_TOKEN_KEY).catch(() => null);
+  if (!token) { await registerForPush(); token = await SecureStore.getItemAsync(PUSH_TOKEN_KEY).catch(() => null); }
+  if (token) {
+    try {
+      await pushApi.sendTest(token, kind);
+      return;
+    } catch (e) {
+      if (e instanceof ApiError && e.status !== 0 && e.status !== 404) throw new Error(e.message);
+    }
+  }
+  const sound = sounds[kind];
   await N.scheduleNotificationAsync({
     content: {
       title: kind === "requests" ? "New ride request" : "Movo Chauffeur",

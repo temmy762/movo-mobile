@@ -67,8 +67,8 @@ export function NotificationSettings() {
   const test = () => {
     setNote(null);
     sendTestNotification()
-      .then(() => setNote("Test sent. If you didn't hear it, check your phone isn't on silent or Do Not Disturb."))
-      .catch(() => setNote("Couldn't send a test notification."));
+      .then(() => setNote("Test sent. It should arrive in a few seconds. If you don't hear it, check your phone isn't on silent or Do Not Disturb."))
+      .catch((e) => setNote(e instanceof Error && e.message ? e.message : "Couldn't send a test notification."));
   };
 
   const st = status ? STATUS_TEXT[status] : null;

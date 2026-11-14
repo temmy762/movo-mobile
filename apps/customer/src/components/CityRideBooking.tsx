@@ -3,8 +3,10 @@
  * route, Now or Reserve (30 min notice), optional "for someone else", the
  * server-signed price for the customer tier (Standard at launch), card
  * payment (PaymentSheet), then the booking from the quote + paid intent.
+ * Opens on the destination search with the pickup filled from the phone's
+ * location, and prices the trip as soon as it's complete.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -15,6 +17,7 @@ import { colors, fonts } from "@movo/ui";
 import { useSession } from "@/lib/session";
 import { payForQuote } from "@/lib/pay";
 import { LEAD_MIN, dayOptions, pickupLabel, timeOptions } from "@/lib/when";
+import { currentAddress } from "@/lib/bookingMemory";
 import { AddressSearch } from "./AddressSearch";
 import { BookingMap } from "./BookingMap";
 import { CardPicker } from "./CardPicker";
@@ -31,7 +34,7 @@ export function CityRideBooking({ initialDropoff }: { initialDropoff?: string })
   const user = useSession((s) => s.user);
   const [pickup, setPickup] = useState("");
   const [dropoff, setDropoff] = useState(initialDropoff ?? "");
-  const [searching, setSearching] = useState<"pickup" | "dropoff" | null>(null);
+  const [searching, setSearching] = useState<"pickup" | "dropoff" | null>(initialDropoff ? null : "dropoff");
   const [reserve, setReserve] = useState(false);
   const days = dayOptions();
   const [day, setDay] = useState(days[0].date);
@@ -58,13 +61,25 @@ export function CityRideBooking({ initialDropoff }: { initialDropoff?: string })
     set(v); setEstimate(null); setError(null);
   };
 
+  /* Pickup from where the phone is, unless the rider has already chosen one */
+  useEffect(() => {
+    let live = true;
+    currentAddress().then((a) => { if (live && a) setPickup((p) => p || a); });
+    return () => { live = false; };
+  }, []);
+
+  const pickAddress = (which: "pickup" | "dropoff", a: string) => {
+    changed(which === "pickup" ? setPickup : setDropoff)(a);
+    /* Then straight to whichever address is still missing */
+    const other = which === "pickup" ? dropoff : pickup;
+    setSearching(other ? null : which === "pickup" ? "dropoff" : "pickup");
+  };
+
   const getPrice = async () => {
     setError(null);
     if (!pickup || !dropoff) return setError("Please choose your pickup and destination.");
     if (pickup.trim().toLowerCase() === dropoff.trim().toLowerCase()) return setError("Pickup and destination can't be the same address.");
     if (reserve && !scheduledAt) return setError("Please choose a pickup time.");
-    if (forOther && (!riderName.trim() || !riderPhone.trim())) return setError("Please enter the rider's name and mobile number.");
-    if (forOther && riderPhone.replace(/\D/g, "").length < 10) return setError("Please enter a valid mobile number for the rider.");
     setLoading(true);
     try {
       setEstimate(await bookingsApi.estimate({ pickup, dropoff, tier: TIER, pickupTime: scheduledAt }));
@@ -74,6 +89,15 @@ export function CityRideBooking({ initialDropoff }: { initialDropoff?: string })
       setLoading(false);
     }
   };
+
+  /* Price the trip by itself once it's complete (and again after any change) */
+  const ready = !!pickup && !!dropoff && pickup.trim().toLowerCase() !== dropoff.trim().toLowerCase() && (!reserve || !!scheduledAt);
+  useEffect(() => {
+    if (!ready || estimate || paidIntent) return;
+    const t = setTimeout(() => { getPrice(); }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, pickup, dropoff, scheduledAt, estimate, paidIntent]);
 
   /* Paid, so create the booking. Safe to retry: the same intent never books twice. */
   const book = async (intentId: string, quote: string) => {
@@ -87,6 +111,8 @@ export function CityRideBooking({ initialDropoff }: { initialDropoff?: string })
 
   const pay = async () => {
     if (!estimate) return;
+    if (forOther && (!riderName.trim() || !riderPhone.trim())) return setError("Please enter the rider's name and mobile number.");
+    if (forOther && riderPhone.replace(/\D/g, "").length < 10) return setError("Please enter a valid mobile number for the rider.");
     setPaying(true);
     setError(null);
     let intentId = paidIntent;
@@ -210,11 +236,13 @@ export function CityRideBooking({ initialDropoff }: { initialDropoff?: string })
           {estimate && !paidIntent && <CardPicker value={cardId} onChange={setCardId} />}
           {error && <Text style={styles.error}>{error}</Text>}
 
-          <Pressable onPress={estimate ? pay : getPrice} disabled={loading || paying} accessibilityRole="button">
+          <Pressable onPress={estimate ? pay : !dropoff ? () => setSearching("dropoff") : !pickup ? () => setSearching("pickup") : getPrice}
+            disabled={loading || paying} accessibilityRole="button">
             <LinearGradient colors={loading || paying ? ["#9ca3af", "#9ca3af"] : ["#1a1a2e", "#131936", "#C6BFB2"]}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.cta}>
               {loading || paying ? <ActivityIndicator color="#fff" />
-                : <Text style={styles.ctaText}>{estimate ? (paidIntent ? "Finish booking" : `Pay ${money(estimate.total)}`) : "See price"}</Text>}
+                : <Text style={styles.ctaText}>{estimate ? (paidIntent ? "Finish booking" : `Pay ${money(estimate.total)}`)
+                  : !dropoff ? "Choose your destination" : !pickup ? "Choose your pickup" : reserve && !scheduledAt ? "Choose a pickup time" : "See price"}</Text>}
             </LinearGradient>
           </Pressable>
           {estimate && <Text style={[styles.muted, { textAlign: "center" }]}>Secure card payment by Stripe.</Text>}
@@ -223,11 +251,11 @@ export function CityRideBooking({ initialDropoff }: { initialDropoff?: string })
 
       {searching === "pickup" && (
         <AddressSearch title="Pickup location" initial={pickup} allowCurrentLocation
-          onClose={() => setSearching(null)} onPick={(a) => { changed(setPickup)(a); setSearching(null); }} />
+          onClose={() => setSearching(null)} onPick={(a) => pickAddress("pickup", a)} />
       )}
       {searching === "dropoff" && (
         <AddressSearch title="Destination" initial={dropoff}
-          onClose={() => setSearching(null)} onPick={(a) => { changed(setDropoff)(a); setSearching(null); }} />
+          onClose={() => setSearching(null)} onPick={(a) => pickAddress("dropoff", a)} />
       )}
     </SafeAreaView>
   );

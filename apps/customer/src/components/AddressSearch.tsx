@@ -1,8 +1,9 @@
 /**
  * Full-screen address search (the web's Places autocomplete): suggestions as
  * the rider types (through the server — /api/places/autocomplete), plus "Use
- * current location" for the pickup. Mounted only while open (a fresh search
- * and Google session each time).
+ * current location" for the pickup, the rider's recent addresses, and "Use
+ * this address" for exactly what was typed. Mounted only while open (a fresh
+ * search and Google session each time).
  */
 import { useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
@@ -11,10 +12,11 @@ import * as Location from "expo-location";
 import { ApiError, places } from "@movo/api";
 import type { PlaceSuggestion } from "@movo/shared";
 import { Icon, colors, fonts } from "@movo/ui";
+import { addRecentPlace, getRecentPlaces } from "@/lib/bookingMemory";
 
 const newSession = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
 
-export function AddressSearch({ title, initial, allowCurrentLocation, onPick, onClose }: {
+export function AddressSearch({ title, initial, allowCurrentLocation, onPick: pick, onClose }: {
   title: string;
   initial?: string;
   allowCurrentLocation?: boolean;
@@ -27,8 +29,18 @@ export function AddressSearch({ title, initial, allowCurrentLocation, onPick, on
   const [locating, setLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [session] = useState(newSession);
+  const [recent, setRecent] = useState<string[]>([]);
   const query = text.trim();
   const shown = query.length >= 2 ? results : [];
+  /* Exactly what was typed, when it isn't already one of the suggestions */
+  const typed = query.length >= 4 && !shown.some((r) => r.description.toLowerCase() === query.toLowerCase()) ? query : null;
+
+  useEffect(() => { getRecentPlaces().then(setRecent); }, []);
+
+  const onPick = (address: string) => {
+    addRecentPlace(address);
+    pick(address);
+  };
 
   /* Debounced suggestions; a newer keystroke cancels the older request */
   useEffect(() => {
@@ -38,7 +50,13 @@ export function AddressSearch({ title, initial, allowCurrentLocation, onPick, on
       setLoading(true);
       places.autocomplete(query, session, ctrl.signal)
         .then((r) => { setResults(r.suggestions); setError(null); })
-        .catch((e) => { if (!ctrl.signal.aborted) setError(e instanceof ApiError && e.status !== 0 ? e.message : "Couldn't search addresses. Check your connection."); })
+        .catch((e) => {
+          if (ctrl.signal.aborted) return;
+          setResults([]);
+          setError(e instanceof ApiError && e.status === 0
+            ? "Couldn't search addresses. Check your connection."
+            : "Suggestions aren't loading. You can still use the address as you typed it.");
+        })
         .finally(() => { if (!ctrl.signal.aborted) setLoading(false); });
     }, 300);
     return () => { clearTimeout(t); ctrl.abort(); };
@@ -84,6 +102,28 @@ export function AddressSearch({ title, initial, allowCurrentLocation, onPick, on
         )}
         {error && <Text style={styles.error}>{error}</Text>}
 
+        {typed && (
+          <Pressable onPress={() => onPick(typed)} style={styles.row} accessibilityRole="button" accessibilityLabel={`Use ${typed}`}>
+            <View style={styles.rowIcon}><Icon name="check" size={15} color={colors.navy} strokeWidth={2.5} /></View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowMain} numberOfLines={1}>Use &quot;{typed}&quot;</Text>
+              <Text style={styles.rowSub}>Use the address as typed</Text>
+            </View>
+          </Pressable>
+        )}
+
+        {query.length < 2 && recent.length > 0 && (
+          <View>
+            <Text style={styles.section}>Recent</Text>
+            {recent.map((a) => (
+              <Pressable key={a} onPress={() => onPick(a)} style={styles.row} accessibilityRole="button">
+                <View style={styles.rowIcon}><Icon name="clock" size={15} color="#6b7280" /></View>
+                <Text style={[styles.rowMain, { flex: 1 }]} numberOfLines={2}>{a}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
         <FlatList
           data={shown}
           keyExtractor={(r) => r.placeId}
@@ -114,6 +154,7 @@ const styles = StyleSheet.create({
   rowIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: "#f3f4f6", alignItems: "center", justifyContent: "center" },
   rowMain: { fontFamily: fonts.bodySemi, fontSize: 14, color: "#1f2937" },
   rowSub: { fontFamily: fonts.body, fontSize: 12, color: "#6b7280", marginTop: 1 },
+  section: { fontFamily: fonts.bodySemi, fontSize: 11, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 1, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 },
   error: { fontFamily: fonts.body, fontSize: 12, color: "#dc2626", paddingHorizontal: 16, paddingVertical: 8 },
   powered: { fontFamily: fonts.body, fontSize: 10, color: "#9ca3af", textAlign: "right", padding: 12 },
 });

@@ -7,8 +7,10 @@
  *   3. Contact & authorization: who is riding, mobile, receipt email, 3 consents
  *   4. Confirm & pay: the signed Safe Ride fare (no service fee), card payment,
  *      then the booking from the quote + paid intent (POST /api/bookings/care)
+ * Opens on the destination search with the pickup filled from the phone's
+ * location, shows the fare from step 1, and remembers the rider's vehicle.
  */
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -20,6 +22,7 @@ import { useSession } from "@/lib/session";
 import { payForQuote } from "@/lib/pay";
 import { openWeb } from "@/lib/links";
 import { LEAD_MIN, dayOptions, pickupLabel, timeOptions } from "@/lib/when";
+import { currentAddress, getSavedVehicle, saveVehicle } from "@/lib/bookingMemory";
 import { AddressSearch } from "./AddressSearch";
 import { BookingMap } from "./BookingMap";
 import { CardPicker } from "./CardPicker";
@@ -94,7 +97,7 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
   /* 1 — where & when */
   const [pickup, setPickup] = useState("");
   const [dropoff, setDropoff] = useState(initialDropoff ?? "");
-  const [searching, setSearching] = useState<"pickup" | "dropoff" | null>(null);
+  const [searching, setSearching] = useState<"pickup" | "dropoff" | null>(initialDropoff ? null : "dropoff");
   const [instructions, setInstructions] = useState("");
   const [passengers, setPassengers] = useState(1);
   const [reserve, setReserve] = useState(false);
@@ -128,6 +131,36 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
   /* Saved card id, null = new card, undefined = not chosen yet */
   const [cardId, setCardId] = useState<string | null | undefined>(undefined);
   const [bookedId, setBookedId] = useState<string | null>(null);
+
+  /* Pickup from where the phone is, and last time's vehicle — unless already filled */
+  useEffect(() => {
+    let live = true;
+    currentAddress().then((a) => { if (live && a) setPickup((p) => p || a); });
+    getSavedVehicle().then((v) => { if (live && v) setVehicle((cur) => (cur.make || cur.plate ? cur : v)); });
+    return () => { live = false; };
+  }, []);
+
+  const pickAddress = (which: "pickup" | "dropoff", a: string) => {
+    (which === "pickup" ? setPickup : setDropoff)(a);
+    const other = which === "pickup" ? dropoff : pickup;
+    setSearching(other ? null : which === "pickup" ? "dropoff" : "pickup");
+  };
+
+  /* The fare on step 1, before the vehicle and contact details */
+  const [preview, setPreview] = useState<{ key: string; total: number } | null>(null);
+  const previewKey = `${pickup}|${dropoff}|${scheduledAt ?? ""}`;
+  const previewReady = !!pickup && !!dropoff && pickup.trim().toLowerCase() !== dropoff.trim().toLowerCase() && (!reserve || !!scheduledAt);
+  useEffect(() => {
+    if (!previewReady) return;
+    let live = true;
+    const t = setTimeout(() => {
+      bookingsApi.estimate({ pickup, dropoff, tier: "care", pickupTime: scheduledAt })
+        .then((e) => { if (live) setPreview({ key: previewKey, total: e.total }); })
+        .catch(() => {});
+    }, 300);
+    return () => { live = false; clearTimeout(t); };
+  }, [previewReady, previewKey, pickup, dropoff, scheduledAt]);
+  const fareNow = preview?.key === previewKey ? preview.total : null;
 
   const toggleSomeoneElse = (v: boolean) => {
     setForSomeoneElse(v);
@@ -190,6 +223,7 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
         riderName: riderName.trim(), riderPhone: riderPhone.trim(), receiptEmail: receiptEmail.trim(),
         passengers, pickupInstructions: instructions.trim() || undefined,
       });
+      saveVehicle({ ...vehicle, make: vehicle.make.trim(), model: vehicle.model.trim(), plate: vehicle.plate.trim().toUpperCase() });
       setBookedId(bookingId);
     } catch (e) {
       const msg = e instanceof ApiError && e.status !== 0 ? e.message : e instanceof Error ? e.message : "Something went wrong.";
@@ -255,6 +289,16 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
                   <Text style={[styles.addrText, !dropoff && styles.placeholder]} numberOfLines={2}>{dropoff || "Where to?"}</Text>
                 </Pressable>
               </View>
+
+              {previewReady && (
+                <View style={styles.farePreview}>
+                  <Text style={styles.line}>Your fare</Text>
+                  {fareNow != null
+                    ? <Text style={styles.total}>{money(fareNow)}</Text>
+                    : <ActivityIndicator size="small" color={colors.navy} />}
+                </View>
+              )}
+              {previewReady && <Text style={styles.muted}>GST and your chauffeur&apos;s return ride included. Confirmed before you pay.</Text>}
 
               <Label>Pickup instructions (optional)</Label>
               <Field value={instructions} onChangeText={(v) => setInstructions(v.slice(0, 300))} multiline
@@ -388,11 +432,11 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
 
       {searching === "pickup" && (
         <AddressSearch title="Pickup location" initial={pickup} allowCurrentLocation
-          onClose={() => setSearching(null)} onPick={(a) => { setPickup(a); setSearching(null); }} />
+          onClose={() => setSearching(null)} onPick={(a) => pickAddress("pickup", a)} />
       )}
       {searching === "dropoff" && (
         <AddressSearch title="Destination" initial={dropoff}
-          onClose={() => setSearching(null)} onPick={(a) => { setDropoff(a); setSearching(null); }} />
+          onClose={() => setSearching(null)} onPick={(a) => pickAddress("dropoff", a)} />
       )}
     </SafeAreaView>
   );
@@ -432,6 +476,7 @@ const styles = StyleSheet.create({
   box: { width: 20, height: 20, borderRadius: 6, borderWidth: 1.5, borderColor: "#d1d5db", backgroundColor: "#fff", alignItems: "center", justifyContent: "center", marginTop: 1 },
   checkText: { flex: 1, fontFamily: fonts.body, fontSize: 13, color: "#374151", lineHeight: 18 },
   link: { fontFamily: fonts.bodySemi, color: colors.navy, textDecorationLine: "underline" },
+  farePreview: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", backgroundColor: "#fff", borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12 },
   summary: { backgroundColor: "#fff", borderRadius: 18, padding: 16, gap: 8 },
   sumRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   sumText: { flex: 1, fontFamily: fonts.bodyMedium, fontSize: 13, color: "#111827" },

@@ -14,7 +14,7 @@ import Constants from "expo-constants";
 import { isRunningInExpoGo } from "expo";
 import * as Device from "expo-device";
 import * as SecureStore from "expo-secure-store";
-import { push as pushApi } from "@movo/api";
+import { ApiError, push as pushApi } from "@movo/api";
 import { UPDATE_SOUNDS, getUpdateSound, iosSound, saveUpdateSound, soundLabel, updateChannelId } from "./alertSounds";
 
 const PUSH_TOKEN_KEY = "movo_push_token";
@@ -108,11 +108,30 @@ export async function setAlertSound(sound: string): Promise<void> {
   if (token) await pushApi.registerDevice(token, Platform.OS === "ios" ? "ios" : "android", "customer", { updates: sound });
 }
 
-/** A sample alert right now, on the picked sound's channel */
+/**
+ * A test alert. Sent through movo-web and the push service — the same path
+ * and sound as real ride alerts — so it proves alerts reach this phone. If
+ * the server can't be reached, a local alert on the picked channel instead.
+ * Throws with a message the screen can show.
+ */
 export async function sendTestNotification(): Promise<void> {
   const N = Notifications;
-  if (!N) return;
+  if (!N) throw new Error("Notifications aren't available in this version of the app.");
+  if ((await N.getPermissionsAsync()).status !== "granted") throw new Error("Turn notifications on first.");
   const sound = await getUpdateSound();
+  await ensureChannels(N, sound).catch(() => {});
+
+  let token = await SecureStore.getItemAsync(PUSH_TOKEN_KEY).catch(() => null);
+  if (!token) { await registerForPush(); token = await SecureStore.getItemAsync(PUSH_TOKEN_KEY).catch(() => null); }
+  if (token) {
+    try {
+      await pushApi.sendTest(token, "updates");
+      return;
+    } catch (e) {
+      /* A real refusal is worth showing; no connection falls back to local */
+      if (e instanceof ApiError && e.status !== 0 && e.status !== 404) throw new Error(e.message);
+    }
+  }
   await N.scheduleNotificationAsync({
     content: { title: "Movo Privé", body: "This is how your ride updates will sound.", sound: iosSound(sound) ?? false, data: { type: "test" } },
     trigger: Platform.OS === "android" ? { channelId: updateChannelId(sound) } : null,
