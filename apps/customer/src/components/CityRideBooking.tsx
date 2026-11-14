@@ -16,6 +16,7 @@ import { useSession } from "@/lib/session";
 import { payForQuote } from "@/lib/pay";
 import { LEAD_MIN, dayOptions, pickupLabel, timeOptions } from "@/lib/when";
 import { AddressSearch } from "./AddressSearch";
+import { BookingMap } from "./BookingMap";
 import { CardPicker } from "./CardPicker";
 import { BookingDone } from "./BookingDone";
 import { ScreenHeader } from "./ScreenHeader";
@@ -126,6 +127,7 @@ export function CityRideBooking({ initialDropoff }: { initialDropoff?: string })
       <ScreenHeader title="Book a City Ride" subtitle="Winnipeg" />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+          <BookingMap pickup={pickup} dropoff={dropoff} />
           <View style={styles.card}>
             <Pressable onPress={() => setSearching("pickup")} style={styles.addr} accessibilityRole="button">
               <View style={[styles.dot, { backgroundColor: colors.navy }]} />

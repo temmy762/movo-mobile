@@ -11,6 +11,10 @@ export const autocomplete = (input: string, session: string, signal?: AbortSigna
 export const reverse = (lat: number, lng: number) =>
   request<{ address: string; lat: number; lng: number }>(`/api/places/reverse?lat=${lat}&lng=${lng}`);
 
+/* The point for an address, for the booking map's pins (404 = not found) */
+export const geocode = (address: string) =>
+  request<{ lat: number; lng: number }>(`/api/places/geocode?address=${encodeURIComponent(address)}`);
+
 /* Driving route for a map's route line. 502 = no route (draw a straight line instead). */
 export const route = (from: { lat: number; lng: number }, to: { lat: number; lng: number }) =>
   request<{ points: [number, number][]; distanceMeters: number; durationSec: number }>(
