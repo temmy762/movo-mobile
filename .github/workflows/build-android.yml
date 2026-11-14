@@ -1,0 +1,69 @@
+# Build the Android apps on GitHub's machines instead of EAS's build servers
+# (`eas build --local` doesn't use the Expo plan's build allowance). Signing
+# key, version numbers and the "preview"/"production" environment variables
+# (e.g. the Maps key) still come from the movoprive Expo account.
+#
+# Needs the repository secret EXPO_TOKEN (an Expo access token).
+# Run from GitHub → Actions → Build Android → Run workflow. The APK / AAB is
+# attached to the run as a download.
+name: Build Android
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: Which app
+        type: choice
+        options: [both, customer, chauffeur]
+        default: both
+      profile:
+        description: "preview = APK to install directly, production = AAB for Google Play"
+        type: choice
+        options: [preview, production]
+        default: preview
+
+jobs:
+  build:
+    name: ${{ matrix.app }} (${{ inputs.profile }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(inputs.app == 'both' && '["customer","chauffeur"]' || format('["{0}"]', inputs.app)) }}
+    env:
+      EXT: ${{ inputs.profile == 'production' && 'aab' || 'apk' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        working-directory: apps/${{ matrix.app }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          eas build --local --platform android --profile "${{ inputs.profile }}" --non-interactive \
+            --output "$GITHUB_WORKSPACE/out/movo-${{ matrix.app }}-${{ inputs.profile }}.$EXT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: movo-${{ matrix.app }}-${{ inputs.profile }}-${{ github.run_number }}
+          path: out/movo-${{ matrix.app }}-${{ inputs.profile }}.${{ env.EXT }}
+          retention-days: 30
+          if-no-files-found: error
