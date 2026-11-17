@@ -16,7 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, usePreventRemove } from "expo-router";
 import { ApiError, bookings as bookingsApi } from "@movo/api";
-import { winnipegDateTime, type FareEstimate, type SafeRideVehicle } from "@movo/shared";
+import { VEHICLE_MAKES, VEHICLE_MODELS, listedMake, listedModel, winnipegDateTime, type FareEstimate, type SafeRideVehicle } from "@movo/shared";
 import { Icon, colors, fonts } from "@movo/ui";
 import { useSession } from "@/lib/session";
 import { payForQuote } from "@/lib/pay";
@@ -27,13 +27,8 @@ import { AddressSearch } from "./AddressSearch";
 import { BookingMap } from "./BookingMap";
 import { CardPicker } from "./CardPicker";
 import { BookingDone } from "./BookingDone";
+import { ListPicker, OTHER } from "./ListPicker";
 
-const MAKES = [
-  "Acura", "Audi", "BMW", "Buick", "Cadillac", "Chevrolet", "Chrysler", "Dodge", "Ford", "Genesis", "GMC",
-  "Honda", "Hyundai", "Infiniti", "Jaguar", "Jeep", "Kia", "Land Rover", "Lexus", "Lincoln", "Mazda",
-  "Mercedes-Benz", "Mini", "Mitsubishi", "Nissan", "Porsche", "Ram", "Subaru", "Tesla", "Toyota",
-  "Volkswagen", "Volvo",
-];
 const COLOURS = ["Black", "White", "Silver", "Grey", "Blue", "Red", "Green", "Brown", "Beige", "Gold", "Other"];
 const NEXT_YEAR = new Date().getFullYear() + 1;
 const YEARS = Array.from({ length: 30 }, (_, i) => String(NEXT_YEAR - i));
@@ -110,9 +105,20 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
   const [vehicle, setVehicle] = useState<SafeRideVehicle>({ make: "", model: "", year: "", colour: "", plate: "", transmission: "Automatic" });
   const [roadworthy, setRoadworthy] = useState(false);
   const setV = (k: keyof SafeRideVehicle, v: string) => setVehicle((prev) => ({ ...prev, [k]: v }));
-  const makeMatches = vehicle.make.trim().length >= 1
-    ? MAKES.filter((m) => m.toLowerCase().startsWith(vehicle.make.trim().toLowerCase()) && m !== vehicle.make).slice(0, 6)
-    : [];
+  /* Make and model are picked from lists; "Other" types one that isn't listed */
+  const [makeOther, setMakeOther] = useState(false);
+  const [modelOther, setModelOther] = useState(false);
+  const make = makeOther ? null : listedMake(vehicle.make);
+  const chooseMake = (v: string) => {
+    const other = v === OTHER;
+    setMakeOther(other);
+    setModelOther(other);
+    setVehicle((prev) => ({ ...prev, make: other ? "" : v, model: "" }));
+  };
+  const chooseModel = (v: string) => {
+    setModelOther(v === OTHER);
+    setV("model", v === OTHER ? "" : v);
+  };
 
   /* 3 — contact & authorization (the account holder by default) */
   const self = { name: `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim(), phone: user?.phone ?? "" };
@@ -136,7 +142,13 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
   useEffect(() => {
     let live = true;
     currentAddress().then((a) => { if (live && a) setPickup((p) => p || a); });
-    getSavedVehicle().then((v) => { if (live && v) setVehicle((cur) => (cur.make || cur.plate ? cur : v)); });
+    getSavedVehicle().then((v) => {
+      /* Loads while the rider is still on step 1, before the vehicle fields are touched */
+      if (!live || !v) return;
+      setVehicle(v);
+      setMakeOther(!!v.make && !listedMake(v.make));
+      setModelOther(!!v.model && !listedModel(v.make, v.model));
+    });
     return () => { live = false; };
   }, []);
 
@@ -341,10 +353,24 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
           {step === 2 && (
             <>
               <Label>Make *</Label>
-              <Field value={vehicle.make} onChangeText={(v) => setV("make", v)} placeholder="e.g. Toyota" autoCorrect={false} />
-              {makeMatches.length > 0 && <Chips options={makeMatches} value="" onChange={(v) => setV("make", v)} />}
+              <ListPicker label="Make" placeholder="Select make" options={VEHICLE_MAKES} allowOther
+                value={makeOther ? "Other" : make ?? ""} onPick={chooseMake} />
+              {makeOther && (
+                <Field value={vehicle.make} onChangeText={(v) => setV("make", v.slice(0, 40))} placeholder="Type the make" autoCorrect={false} />
+              )}
               <Label>Model *</Label>
-              <Field value={vehicle.model} onChangeText={(v) => setV("model", v)} placeholder="e.g. Corolla" autoCorrect={false} />
+              {makeOther ? (
+                <Field value={vehicle.model} onChangeText={(v) => setV("model", v.slice(0, 40))} placeholder="Type the model" autoCorrect={false} />
+              ) : (
+                <>
+                  <ListPicker label="Model" placeholder={make ? "Select model" : "Choose the make first"} disabled={!make}
+                    options={make ? VEHICLE_MODELS[make] : []} allowOther
+                    value={modelOther ? "Other" : listedModel(vehicle.make, vehicle.model) ?? ""} onPick={chooseModel} />
+                  {modelOther && (
+                    <Field value={vehicle.model} onChangeText={(v) => setV("model", v.slice(0, 40))} placeholder="Type the model" autoCorrect={false} />
+                  )}
+                </>
+              )}
               <Label>Year *</Label>
               <Chips options={YEARS} value={vehicle.year} onChange={(v) => setV("year", v)} />
               <Label>Colour *</Label>

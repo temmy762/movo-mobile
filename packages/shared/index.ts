@@ -5,3 +5,4 @@ export * from "./winnipegTime";
 export * from "./launchConfig";
 export * from "./enums";
 export * from "./types";
+export * from "./vehicleModels";
