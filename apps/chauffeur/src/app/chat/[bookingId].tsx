@@ -14,7 +14,7 @@ import { SOCKET_EVENTS, type BookingMessage } from "@movo/shared";
 import { Icon, colors, fonts } from "@movo/ui";
 import { useSocket } from "@/lib/socket";
 
-const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+const time = (iso: string) => new Date(iso).toLocaleTimeString([], { timeZone: "America/Winnipeg", hour: "numeric", minute: "2-digit" });
 
 export default function Chat() {
   const { bookingId, number } = useLocalSearchParams<{ bookingId: string; number?: string }>();
