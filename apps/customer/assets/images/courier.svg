@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200" fill="none">
+  <ellipse cx="150" cy="176" rx="104" ry="9" fill="#131936" opacity="0.10"/>
+  <!-- back parcel -->
+  <path d="M168 58 232 74v74l-64 18z" fill="#2A3055"/>
+  <path d="M104 74 168 58v108l-64-18z" fill="#131936"/>
+  <path d="M104 74 168 58l64 16-64 17z" fill="#3b4a7a"/>
+  <path d="M134 66.5 198 82.5v18l-10-3-10 3v-18l-64-15.8z" fill="#C6BFB2" opacity="0.9"/>
+  <!-- front parcel -->
+  <path d="M60 104 112 92v58l-52 14z" fill="#C6BFB2"/>
+  <path d="M112 92l44 12v60l-44-14z" fill="#b3ab9c"/>
+  <path d="M60 104l52-12 44 12-52 13z" fill="#ddd7cc"/>
+  <path d="M84 98.2 128 110v14l-8-2.5-8 2.5v-14L68 100z" fill="#131936" opacity="0.85"/>
+  <!-- motion lines -->
+  <path d="M18 112h28M10 126h30M22 140h22" stroke="#C6BFB2" stroke-width="5" stroke-linecap="round"/>
+</svg>

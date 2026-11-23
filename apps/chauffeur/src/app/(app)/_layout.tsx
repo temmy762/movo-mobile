@@ -12,6 +12,8 @@ export default function AppTabs() {
   useEffect(() => onNotificationTap((data) => {
     if (data.type === "test") return;
     if (data.type === "new_message_driver" && data.bookingId) router.navigate({ pathname: "/chat/[bookingId]", params: { bookingId: data.bookingId } });
+    /* Movo Courier offers open the Deliveries tab */
+    else if (data.service === "courier") router.navigate("/deliveries");
     else router.navigate("/");
   }), []);
 
@@ -27,6 +29,7 @@ export default function AppTabs() {
       >
         <Tabs.Screen name="index" options={{ title: "Home", tabBarIcon: ({ color }) => <Icon name="home" color={color} /> }} />
         <Tabs.Screen name="planned" options={{ title: "Rides", tabBarIcon: ({ color }) => <Icon name="clock" color={color} /> }} />
+        <Tabs.Screen name="deliveries" options={{ title: "Deliveries", tabBarIcon: ({ color }) => <Icon name="list" color={color} /> }} />
         <Tabs.Screen name="wallet" options={{ title: "Wallet", tabBarIcon: ({ color }) => <Icon name="wallet" color={color} /> }} />
         <Tabs.Screen name="profile" options={{ title: "Profile", tabBarIcon: ({ color }) => <Icon name="user" color={color} /> }} />
     </Tabs>

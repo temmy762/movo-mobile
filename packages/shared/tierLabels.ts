@@ -14,5 +14,6 @@ const LABELS: Record<string, string> = {
 export function serviceLabel(carTier: string | null | undefined, bookingType?: string | null): string {
   const tier = normalizeTier(carTier);
   if (bookingType === "CARE" || tier === "care") return "Safe Ride";
+  if (bookingType === "COURIER" || tier === "courier") return "Movo Courier";
   return `In-City · ${LABELS[tier] ?? "Standard"}`;
 }

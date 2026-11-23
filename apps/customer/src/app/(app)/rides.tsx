@@ -43,7 +43,9 @@ const when = (iso: string) =>
 function RideCard({ ride }: { ride: UserBooking }) {
   const care = ride.bookingType === "CARE";
   return (
-    <Pressable onPress={() => router.push({ pathname: "/ride/[id]", params: { id: ride.id } })}
+    <Pressable onPress={() => (ride.bookingType === "COURIER"
+      ? router.push({ pathname: "/courier/[id]", params: { id: ride.id } })
+      : router.push({ pathname: "/ride/[id]", params: { id: ride.id } }))}
       style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]} accessibilityRole="button">
       <View style={{ flex: 1, gap: 4 }}>
         <Text style={styles.car}>{care ? "Safe Ride" : ride.carName}</Text>

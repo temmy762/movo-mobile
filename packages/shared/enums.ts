@@ -109,6 +109,7 @@ export const BookingType = {
   AIRPORT: "AIRPORT",
   HOURLY: "HOURLY",
   CARE: "CARE",
+  COURIER: "COURIER",
 } as const;
 export type BookingType = (typeof BookingType)[keyof typeof BookingType];
 

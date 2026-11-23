@@ -60,6 +60,9 @@ export default function Ride() {
     refetchInterval: (q) => (q.state.data && !isLive(ridePhase(q.state.data)) ? false : POLL_MS),
   });
   const r = ride.data;
+  /* A delivery opened from a notification has its own screen */
+  const isCourier = (r as { bookingType?: string } | undefined)?.bookingType === "COURIER";
+  useEffect(() => { if (isCourier) router.replace({ pathname: "/courier/[id]", params: { id } }); }, [isCourier, id]);
   const phase: RidePhase | null = r ? ridePhase(r) : null;
   const live = !!phase && isLive(phase);
   const unread = useUnreadCount(id);

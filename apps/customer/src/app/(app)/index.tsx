@@ -15,16 +15,21 @@ import { IN_CITY_RIDES_ENABLED } from "@movo/shared";
 import { Icon, colors, fonts } from "@movo/ui";
 import { useSession } from "@/lib/session";
 
-type Service = { id: "city" | "care"; title: string; desc: string; cta: string; img: number };
+type Service = { id: "city" | "care" | "courier"; title: string; desc: string; cta: string; img: number };
 
 const SERVICES: Service[] = [
   ...(IN_CITY_RIDES_ENABLED
     ? [{ id: "city" as const, title: "City Rides", desc: "Rides for everyday trips", cta: "Book a ride", img: require("../../../assets/images/standard.png") }]
     : []),
   { id: "care", title: "Safe Ride", desc: "A chauffeur drives you in your own car.", cta: "Book a chauffeur", img: require("../../../assets/images/safe-ride.png") },
+  /* The apps aren't in the stores yet, so testers see Courier before its
+     public launch (the website shows it from COURIER_PUBLIC_FROM) */
+  { id: "courier", title: "Movo Courier", desc: "Same-day packages to and from nearby towns.", cta: "Send a package", img: require("../../../assets/images/courier.svg") },
 ];
+const RIDE_SERVICES = SERVICES.filter((s) => s.id !== "courier");
 
-const book = (service: Service["id"]) => router.push({ pathname: "/book", params: { service } });
+const book = (service: Service["id"]) =>
+  service === "courier" ? router.push("/courier") : router.push({ pathname: "/book", params: { service } });
 
 /* The web's "Need help choosing?" (home/help?topic=choosing) */
 const helpChoosing = () =>
@@ -46,7 +51,7 @@ export default function Home() {
   const unreadCount = unread.data?.unreadCount ?? 0;
 
   /* With one service, go straight in; otherwise ask which */
-  const whereTo = () => (SERVICES.length === 1 ? book(SERVICES[0].id) : setChoosing(true));
+  const whereTo = () => (RIDE_SERVICES.length === 1 ? book(RIDE_SERVICES[0].id) : setChoosing(true));
 
   return (
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: "#fff" }}>
@@ -120,7 +125,7 @@ export default function Home() {
         <Pressable style={styles.overlay} onPress={() => setChoosing(false)}>
           <Pressable style={styles.sheet} onPress={() => {}}>
             <Text style={styles.sheetTitle}>How would you like to travel?</Text>
-            {SERVICES.map((s) => (
+            {RIDE_SERVICES.map((s) => (
               <Pressable key={s.id} onPress={() => { setChoosing(false); book(s.id); }} style={styles.choice} accessibilityRole="button">
                 <Image source={s.img} style={styles.choiceImg} contentFit="contain" />
                 <View style={{ flex: 1 }}>

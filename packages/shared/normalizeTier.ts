@@ -1,6 +1,6 @@
 /* AUTO-SYNCED from movo-web/lib/normalizeTier.ts by scripts/sync-shared.mjs — do not edit here. */
 
-export type PlatformTier = "classic" | "premium" | "black" | "care";
+export type PlatformTier = "classic" | "premium" | "black" | "care" | "courier";
 
 const MAP: Record<string, PlatformTier> = {
   economy:                         "classic",
@@ -31,6 +31,9 @@ const MAP: Record<string, PlatformTier> = {
   "movo safe ride":                "care",
   "movo care ride":                "care",
   saferide:                        "care",
+  /* Movo Courier — packages, its own rate card (lib/courier) */
+  courier:                         "courier",
+  "movo courier":                  "courier",
 };
 
 export function normalizeTier(raw: string | null | undefined): PlatformTier {

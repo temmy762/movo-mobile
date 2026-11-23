@@ -195,7 +195,7 @@ export async function sendTestNotification(kind: SoundKind): Promise<void> {
   });
 }
 
-type PushData = { type?: string; bookingId?: string };
+type PushData = { type?: string; bookingId?: string; service?: string };
 
 /** Calls `onTap` with the alert's data when the chauffeur taps one (including the one that launched the app) */
 export function onNotificationTap(onTap: (data: PushData) => void): () => void {

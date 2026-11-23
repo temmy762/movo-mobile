@@ -23,6 +23,14 @@ export const HOURLY_CHARTER_ENABLED = false;
 /** Chauffeur vehicle rental (dashboard, onboarding option, admin, public site). */
 export const VEHICLE_RENTAL_ENABLED = false;
 
+/**
+ * Movo Courier pilot (La Salle + Steinbach) opens Friday Nov 27, 2026, 00:00
+ * Winnipeg. Before then the home-screen card is hidden; /home/courier still
+ * works by direct link for testing. Towns are switched on in Admin → Courier.
+ */
+export const COURIER_PUBLIC_FROM = new Date("2026-11-27T06:00:00Z");
+export const courierIsPublic = (now = new Date()) => now >= COURIER_PUBLIC_FROM;
+
 /* Oldest model year accepted for a chauffeur's own vehicle */
 export const MIN_VEHICLE_YEAR = 2017;
 
