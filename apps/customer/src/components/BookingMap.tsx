@@ -32,7 +32,8 @@ function usePlace(address: string) {
   return { point, notFound: a.length >= 3 && q.isError };
 }
 
-export function BookingMap({ pickup, dropoff }: { pickup: string; dropoff: string }) {
+/** `driver`: a live position to show too (Movo Courier tracking) */
+export function BookingMap({ pickup, dropoff, driver, driverLabel }: { pickup: string; dropoff: string; driver?: LatLng | null; driverLabel?: string }) {
   const map = useRef<MapView>(null);
   const [here, setHere] = useState<LatLng | null>(null);
   const from = usePlace(pickup);
@@ -74,6 +75,11 @@ export function BookingMap({ pickup, dropoff }: { pickup: string; dropoff: strin
         )}
         {from.point && <Marker coordinate={from.point} title="Pickup" pinColor={colors.navy} />}
         {to.point && <Marker coordinate={to.point} title="Destination" pinColor="#ef4444" />}
+        {driver && (
+          <Marker coordinate={driver} title={driverLabel ?? "Your driver"} anchor={{ x: 0.5, y: 0.5 }}>
+            <View style={styles.driver}><View style={styles.driverDot} /></View>
+          </Marker>
+        )}
       </MapView>
       {problem && <Text style={styles.problem}>{problem}</Text>}
     </View>
@@ -83,5 +89,7 @@ export function BookingMap({ pickup, dropoff }: { pickup: string; dropoff: strin
 const styles = StyleSheet.create({
   wrap: { borderRadius: 16, overflow: "hidden", backgroundColor: "#e5e7eb" },
   map: { height: 190 },
+  driver: { width: 22, height: 22, borderRadius: 11, backgroundColor: "rgba(19,25,54,0.25)", alignItems: "center", justifyContent: "center" },
+  driverDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.navy, borderWidth: 2, borderColor: "#fff" },
   problem: { fontFamily: fonts.body, fontSize: 12, color: "#b91c1c", backgroundColor: "#fef2f2", paddingHorizontal: 12, paddingVertical: 8 },
 });

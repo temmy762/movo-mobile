@@ -10,6 +10,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiBaseUrl, courier, rides } from "@movo/api";
 import { Icon, colors, fonts } from "@movo/ui";
 import { useSession } from "@/lib/session";
+import { BookingMap } from "@/components/BookingMap";
 
 type Party = { name: string; phone: string };
 type CourierBooking = {
@@ -46,6 +47,15 @@ export default function CourierTracking() {
     refetchInterval: (query) => (query.state.data && ["COMPLETED", "CANCELLED"].includes(query.state.data.status) ? false : 8000),
   });
   const b = q.data;
+  /* The driver's position while the delivery is under way */
+  const live = !!b && b.status === "CONFIRMED" && !!b.driver && (!!b.enRouteAt || !!b.courierPickedUpAt);
+  const pos = useQuery({
+    queryKey: ["courier-driver-pos", id],
+    queryFn: () => rides.driverLocation(id),
+    enabled: live,
+    refetchInterval: 6000,
+  });
+  const driverPt = live && pos.data?.position ? { latitude: pos.data.position.lat, longitude: pos.data.position.lng } : null;
 
   const cancel = () => Alert.alert("Cancel this delivery?", b?.paymentStatus === "PAID" ? "It hasn't been picked up, so you'll get a full refund." : "Nothing has been charged.", [
     { text: "Keep it", style: "cancel" },
@@ -73,6 +83,9 @@ export default function CourierTracking() {
       </View>
       {!b ? (q.isError ? <Text style={styles.error}>Couldn&apos;t load this delivery.</Text> : <ActivityIndicator style={{ marginTop: 40 }} color={colors.navy} />) : (
         <ScrollView contentContainerStyle={styles.page} refreshControl={<RefreshControl refreshing={q.isFetching} onRefresh={() => { q.refetch(); }} />}>
+          {b.status !== "CANCELLED" && b.status !== "COMPLETED" && (
+            <BookingMap pickup={b.pickup} dropoff={b.dropoff} driver={driverPt} driverLabel={b.driver ? `${b.driver.firstName} (your driver)` : undefined} />
+          )}
           <View style={styles.card}>
             <Text style={styles.kicker}>{b.courier?.mode === "SCHEDULED" ? "SCHEDULED" : "ONE WAY"} · {b.bookingNumber}</Text>
             <Text style={styles.title}>{headline(b)}</Text>
