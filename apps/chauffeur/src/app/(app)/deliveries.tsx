@@ -6,7 +6,7 @@
  * Cancelling a Scheduled run < 2 h before counts as a late cancel.
  */
 import { useCallback, useEffect, useState } from "react";
-import { Alert, ActivityIndicator, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { Alert, ActivityIndicator, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import { useFocusEffect } from "expo-router";
@@ -138,6 +138,52 @@ function JobCard({ job, refresh }: { job: Job; refresh: () => void }) {
   );
 }
 
+/* A finished delivery: the customer's stars + tip, and rating the customer */
+function RecentCard({ job, refresh }: { job: Job; refresh: () => void }) {
+  const [stars, setStars] = useState(0);
+  const [text, setText] = useState("");
+  const [saving, setSaving] = useState(false);
+  const needsText = stars > 0 && stars <= 3 && !text.trim();
+  const save = async () => {
+    setSaving(true);
+    try { await courier.rateCustomer(job.id, stars, text.trim() || null); refresh(); }
+    catch (e) { Alert.alert("Couldn't save", e instanceof Error ? e.message : "Please try again."); }
+    finally { setSaving(false); }
+  };
+  return (
+    <View style={styles.card}>
+      <View style={styles.between}>
+        <Text style={styles.body}>{job.town} · {job.outcome === "RETURNED_TO_SENDER" ? "Returned" : job.outcome === "LEFT_AT_DOOR" ? "Left at door" : "Delivered"}</Text>
+        <Text style={styles.pay}>{money(job.payout)}{job.tip ? ` + ${money(job.tip)} tip` : ""}</Text>
+      </View>
+      <Text style={styles.muted}>
+        Customer&apos;s rating: {job.rating
+          ? <Text><Text style={{ color: "#f59e0b" }}>{"★".repeat(job.rating)}</Text><Text style={{ color: "#d1d5db" }}>{"★".repeat(5 - job.rating)}</Text>{job.review ? ` “${job.review}”` : ""}</Text>
+          : "not rated yet"}
+      </Text>
+      {job.customerRating ? (
+        <Text style={styles.muted}>You rated the customer {"★".repeat(job.customerRating)}</Text>
+      ) : (
+        <>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>
+            <Text style={styles.muted}>Rate the customer</Text>
+            {[1, 2, 3, 4, 5].map((s) => (
+              <Pressable key={s} onPress={() => setStars(s)} hitSlop={4} accessibilityRole="radio" accessibilityState={{ selected: stars === s }} accessibilityLabel={`${s} star${s > 1 ? "s" : ""}`}>
+                <Text style={{ fontSize: 24, color: s <= stars ? "#f59e0b" : "#d1d5db" }}>{"★"}</Text>
+              </Pressable>
+            ))}
+          </View>
+          {stars > 0 && stars <= 3 && (
+            <TextInput value={text} onChangeText={setText} maxLength={500} placeholder="Required: what went wrong?" placeholderTextColor="#9ca3af"
+              style={styles.input} accessibilityLabel="What went wrong" />
+          )}
+          {stars > 0 && <Btn label={saving ? "Saving..." : "Save rating"} busy={saving || needsText} onPress={save} />}
+        </>
+      )}
+    </View>
+  );
+}
+
 export default function Deliveries() {
   const { on } = useSocket();
   const [skipped, setSkipped] = useState<string[]>([]);
@@ -200,12 +246,7 @@ export default function Deliveries() {
           )}
 
           {s.recent.length > 0 && <Text style={styles.section}>RECENTLY FINISHED</Text>}
-          {s.recent.map((r) => (
-            <View key={r.id} style={[styles.card, styles.between]}>
-              <Text style={styles.body}>{r.town} · {r.outcome === "RETURNED_TO_SENDER" ? "Returned" : r.outcome === "LEFT_AT_DOOR" ? "Left at door" : "Delivered"}</Text>
-              <Text style={styles.pay}>{money(r.payout)}</Text>
-            </View>
-          ))}
+          {s.recent.map((r) => <RecentCard key={r.id} job={r} refresh={() => { refetch(); }} />)}
         </ScrollView>
       )}
     </SafeAreaView>
@@ -233,6 +274,7 @@ const styles = StyleSheet.create({
   door: { fontFamily: fonts.bodySemi, fontSize: 12, color: "#b45309", marginTop: 4 },
   doorBox: { backgroundColor: "#fffbeb", borderRadius: 12, padding: 10, gap: 8 },
   warn: { fontFamily: fonts.body, fontSize: 12, color: "#b91c1c", backgroundColor: "#fef2f2", borderRadius: 10, padding: 10 },
+  input: { borderWidth: 1, borderColor: "#fcd34d", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8, fontFamily: fonts.body, fontSize: 13, color: "#111827", marginTop: 6 },
   btn: { minHeight: 46, borderRadius: 999, alignItems: "center", justifyContent: "center", paddingHorizontal: 12 },
   btnLight: { borderWidth: 1, borderColor: "#d1d5db" },
   btnText: { fontFamily: fonts.bodySemi, fontSize: 14, color: "#fff" },

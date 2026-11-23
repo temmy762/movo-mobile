@@ -2,7 +2,8 @@
  * Movo Courier tracking (the web's /home/courier/[id]): status, driver, the
  * pickup and drop-off photos (proof of delivery), payment, cancel before pickup.
  */
-import { Alert, ActivityIndicator, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { Alert, ActivityIndicator, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
@@ -11,6 +12,7 @@ import { apiBaseUrl, courier, rides } from "@movo/api";
 import { Icon, colors, fonts } from "@movo/ui";
 import { useSession } from "@/lib/session";
 import { BookingMap } from "@/components/BookingMap";
+import { TipCard } from "@/components/TipCard";
 
 type Party = { name: string; phone: string };
 type CourierBooking = {
@@ -18,6 +20,7 @@ type CourierBooking = {
   pickup: string; dropoff: string; stops: string[] | null; scheduledAt: string | null;
   enRouteAt: string | null; arrivedAt: string | null; completedAt: string | null;
   cancelledBy: string | null; refundedAmount: number | null;
+  rating: number | null; review: string | null; tip: number | null;
   courierPayMethod: string | null; courierPickupPhotoUrl: string | null; courierDropoffPhotoUrl: string | null;
   courierPickedUpAt: string | null; courierOutcome: string | null;
   courier: { town: string; mode: "ONE_WAY" | "SCHEDULED"; package: { description: string; size: string; value: number }; sender: Party; receiver: Party; leaveAtDoor: boolean } | null;
@@ -25,6 +28,53 @@ type CourierBooking = {
 };
 
 const money = (n: number) => `$${n.toFixed(2)}`;
+
+/* Rate the driver (feedback needed for 3 stars or less, as on rides) */
+function RateDriver({ id, name, rating, review, onSaved }: { id: string; name?: string; rating: number | null; review: string | null; onSaved: () => void }) {
+  const [stars, setStars] = useState(0);
+  const [text, setText] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  if (rating) {
+    return (
+      <View style={styles.card}>
+        <Text style={styles.body}>You rated {name ?? "your driver"} <Text style={{ color: "#f59e0b" }}>{"★".repeat(rating)}</Text><Text style={{ color: "#d1d5db" }}>{"★".repeat(5 - rating)}</Text></Text>
+        {review ? <Text style={styles.muted}>{"“"}{review}{"”"}</Text> : null}
+      </View>
+    );
+  }
+  const needsText = stars > 0 && stars <= 3 && !text.trim();
+  const submit = async () => {
+    setSaving(true); setError(null);
+    try { await rides.rate(id, stars, text.trim() || null); onSaved(); }
+    catch (e) { setError(e instanceof Error ? e.message : "Couldn't send your rating."); }
+    finally { setSaving(false); }
+  };
+  return (
+    <View style={[styles.card, { borderWidth: 2, borderColor: colors.taupe }]}>
+      <Text style={styles.strong}>How was your delivery{name ? ` with ${name}` : ""}?</Text>
+      <Text style={styles.muted}>Your rating helps your driver.</Text>
+      <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+        {[1, 2, 3, 4, 5].map((s) => (
+          <Pressable key={s} onPress={() => setStars(s)} hitSlop={4} accessibilityRole="radio" accessibilityState={{ selected: stars === s }} accessibilityLabel={`${s} star${s > 1 ? "s" : ""}`}>
+            <Icon name="star" size={30} strokeWidth={1.5} color={s <= stars ? "#f59e0b" : "#d1d5db"} fill={s <= stars ? "#f59e0b" : "none"} />
+          </Pressable>
+        ))}
+      </View>
+      {stars > 0 && (
+        <>
+          <TextInput value={text} onChangeText={setText} multiline maxLength={1000} placeholderTextColor="#9ca3af"
+            placeholder={stars <= 3 ? "Required: what went wrong?" : "Tell us more (optional)"}
+            style={[styles.review, needsText && { borderColor: "#f59e0b" }]} accessibilityLabel="Your feedback" />
+          {error && <Text style={styles.error}>{error}</Text>}
+          <Pressable onPress={submit} disabled={saving || needsText} style={[styles.rateBtn, (saving || needsText) && { backgroundColor: "#9ca3af" }]} accessibilityRole="button">
+            <Text style={styles.rateBtnText}>{saving ? "Sending..." : "Submit rating"}</Text>
+          </Pressable>
+        </>
+      )}
+    </View>
+  );
+}
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Winnipeg", weekday: "long", month: "short", day: "numeric" });
 
 function headline(b: CourierBooking) {
@@ -122,6 +172,13 @@ export default function CourierTracking() {
             )}
           </View>
 
+          {b.status === "COMPLETED" && b.driver && (
+            <>
+              <RateDriver id={id} name={b.driver.firstName} rating={b.rating} review={b.review} onSaved={() => { q.refetch(); }} />
+              {b.paymentStatus === "PAID" && <TipCard id={id} tip={b.tip} completedAt={b.completedAt} name={b.driver.firstName} courier />}
+            </>
+          )}
+
           {(b.courierPickupPhotoUrl || b.courierDropoffPhotoUrl) && (
             <View style={styles.card}>
               <Text style={styles.strong}>Photos</Text>
@@ -178,6 +235,9 @@ const styles = StyleSheet.create({
   small: { fontFamily: fonts.bodySemi, fontSize: 10, color: "#6b7280", letterSpacing: 1 },
   body: { fontFamily: fonts.body, fontSize: 13, color: "#111827", marginTop: 2 },
   totalRow: { flexDirection: "row", justifyContent: "space-between", borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: "#e5e7eb", marginTop: 12, paddingTop: 10 },
+  review: { borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 12, padding: 10, minHeight: 70, marginTop: 10, fontFamily: fonts.body, fontSize: 13, color: "#111827", textAlignVertical: "top" },
+  rateBtn: { backgroundColor: colors.navy, borderRadius: 999, paddingVertical: 12, alignItems: "center", marginTop: 10 },
+  rateBtnText: { fontFamily: fonts.bodySemi, fontSize: 14, color: "#fff" },
   cancel: { borderWidth: 1, borderColor: "#d1d5db", borderRadius: 999, paddingVertical: 13, alignItems: "center", backgroundColor: "#fff" },
   cancelText: { fontFamily: fonts.bodySemi, fontSize: 14, color: "#374151" },
   error: { fontFamily: fonts.body, fontSize: 13, color: "#dc2626", textAlign: "center", marginTop: 40 },

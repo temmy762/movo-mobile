@@ -13,8 +13,10 @@ import { confirmExtraCharge } from "@/lib/pay";
 const PRESETS = [5, 10, 15, 20];
 const TIP_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 
-export function TipCard({ id, tip, completedAt, name }: {
+export function TipCard({ id, tip, completedAt, name, courier }: {
   id: string; tip?: number | null; completedAt?: string | null; name?: string;
+  /* Movo Courier: a driver, and the tip goes on the customer's saved card */
+  courier?: boolean;
 }) {
   const queryClient = useQueryClient();
   const [paid, setPaid] = useState<number | null>(tip ?? null);
@@ -60,7 +62,7 @@ export function TipCard({ id, tip, completedAt, name }: {
   return (
     <View style={styles.card}>
       <Text style={styles.title}>Add a tip{name ? ` for ${name}` : ""}</Text>
-      <Text style={styles.sub}>100% goes to your chauffeur. Charged to the card you used for this ride.</Text>
+      <Text style={styles.sub}>{courier ? "100% goes to your driver. Charged to your card on file." : "100% goes to your chauffeur. Charged to the card you used for this ride."}</Text>
       <View style={styles.presets}>
         {PRESETS.map((p) => {
           const on = !custom.trim() && preset === p;

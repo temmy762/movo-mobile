@@ -51,6 +51,8 @@ export type CourierJob = CourierOffer & {
   leaveAtDoor: boolean; instructions: string | null;
   enRouteAt: string | null; arrivedAt: string | null; pickedUpAt: string | null; completedAt: string | null;
   outcome: "DELIVERED" | "LEFT_AT_DOOR" | "RETURNED_TO_SENDER" | null; doorPayUrl: string | null;
+  /* The customer's rating + tip for the driver, and the driver's rating of the customer */
+  rating: number | null; review: string | null; tip: number | null; customerRating: number | null;
 };
 export type CourierDriverState = {
   courierEnabled: boolean; scheduledBlocked: boolean; lateCancels: number;
@@ -71,5 +73,9 @@ export const withPhoto = (id: string, action: "pickup" | "deliver", file: { uri:
   form.append("file", file as unknown as Blob);
   return request<CourierJob>(`/api/courier/driver/${id}`, { method: "POST", body: form });
 };
+
+/* Driver rates the customer (feedback required for 3 stars or less) */
+export const rateCustomer = (id: string, rating: number, review: string | null) =>
+  request<unknown>(`/api/bookings/${id}/rating`, { body: { rating, review } });
 
 export const photoUrl = (bookingId: string, stage: "pickup" | "dropoff") => `/api/courier/${bookingId}/photo?stage=${stage}`;
