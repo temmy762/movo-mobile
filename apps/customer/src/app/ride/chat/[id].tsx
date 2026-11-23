@@ -14,8 +14,9 @@ import { ApiError, rides } from "@movo/api";
 import { SOCKET_EVENTS, type BookingMessage } from "@movo/shared";
 import { Icon, colors, fonts } from "@movo/ui";
 import { useSocket } from "@/lib/socket";
+import { markRead, setOpenChat } from "@/lib/unreadMessages";
 
-const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+const time = (iso: string) => new Date(iso).toLocaleTimeString([], { timeZone: "America/Winnipeg", hour: "numeric", minute: "2-digit" });
 
 export default function Chat() {
   const { id: bookingId, number } = useLocalSearchParams<{ id: string; number?: string }>();
@@ -32,6 +33,14 @@ export default function Chat() {
     queryFn: () => rides.messages(bookingId),
     refetchInterval: 15_000,
   });
+
+  /* On screen: no alerts for this chat, and everything shown counts as read */
+  useEffect(() => {
+    setOpenChat(bookingId);
+    return () => setOpenChat(null);
+  }, [bookingId]);
+  const lastAt = messages.data?.[messages.data.length - 1]?.createdAt;
+  useEffect(() => { if (lastAt) markRead(bookingId, lastAt); }, [bookingId, lastAt]);
 
   useEffect(() => on(SOCKET_EVENTS.MESSAGE_NEW, (data) => {
     const m = data as BookingMessage & { bookingId?: string };

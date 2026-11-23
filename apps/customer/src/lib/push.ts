@@ -24,12 +24,11 @@ const Notifications: typeof import("expo-notifications") | null = isRunningInExp
   : require("expo-notifications"); // eslint-disable-line @typescript-eslint/no-require-imports
 
 Notifications?.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
+  handleNotification: async (n) => {
+    /* A chat message while the app is open: the in-app pop-up shows it instead */
+    const chat = (n.request.content.data as { type?: string } | undefined)?.type === "new_message_rider";
+    return { shouldShowBanner: !chat, shouldShowList: true, shouldPlaySound: !chat, shouldSetBadge: false };
+  },
 });
 
 function projectId(): string | undefined {

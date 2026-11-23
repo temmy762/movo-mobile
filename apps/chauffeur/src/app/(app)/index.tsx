@@ -190,7 +190,7 @@ export default function Home() {
             <OfferCard booking={requests.booking} timeLeft={requests.timeLeft} acting={requests.acting}
               onAccept={requests.accept} onDecline={requests.decline} />
           ) : requests.phase === "accepted" && requests.booking ? (
-            <TripCard key={requests.booking.id} booking={requests.booking} onFinished={onTripFinished} />
+            <TripCard key={requests.booking.id} booking={requests.booking} onFinished={onTripFinished} onProgress={requests.patchActive} />
           ) : shift.online ? (
             <View style={[styles.card, styles.center]}>
               <ActivityIndicator color={colors.taupe} />

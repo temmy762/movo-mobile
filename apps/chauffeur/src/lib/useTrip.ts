@@ -6,7 +6,7 @@
  * trip starts the chauffeur can back out; the ride goes to another chauffeur.
  */
 import { useCallback, useEffect, useState } from "react";
-import { Vibration } from "react-native";
+import { AppState, Vibration } from "react-native";
 import * as Haptics from "expo-haptics";
 import { ApiError, app as appApi, driver as driverApi } from "@movo/api";
 import { SOCKET_EVENTS, type DriverBooking } from "@movo/shared";
@@ -16,17 +16,28 @@ import { STANDARD_WAITING, useWaitingClock, type WaitInfo } from "./waiting";
 
 export type TripStep = "accepted" | "arrived" | "started" | "completed";
 
+/* A trip only moves forward. The card can be rebuilt from an older copy of
+   the booking (e.g. Android recreating the screen while another app was in
+   front); the step must never fall back to "I've Arrived" after Start. */
+const RANK: Record<TripStep, number> = { accepted: 0, arrived: 1, started: 2, completed: 3 };
+const stepOf = (b: { startedAt?: string | null; arrivedAt?: string | null }): TripStep =>
+  b.startedAt ? "started" : b.arrivedAt ? "arrived" : "accepted";
+
+/* Progress the server confirmed, so the screen's copy of the ride stays current */
+export type TripProgress = { arrivedAt?: string; startedAt?: string };
+
 const { freeMin: DEFAULT_FREE_MIN, rate: DEFAULT_RATE } = STANDARD_WAITING;
 
 export function stopsOf(stops: unknown): string[] {
   return Array.isArray(stops) ? stops.filter((s): s is string => typeof s === "string" && !!s) : [];
 }
 
-export function useTrip(booking: DriverBooking) {
+export function useTrip(booking: DriverBooking, onProgress?: (p: TripProgress) => void) {
   const { on } = useSocket();
-  const [step, setStep] = useState<TripStep>(
-    booking.startedAt ? "started" : booking.arrivedAt ? "arrived" : "accepted",
-  );
+  const [step, setStepRaw] = useState<TripStep>(stepOf(booking));
+  const advance = useCallback((next: TripStep) => {
+    setStepRaw((cur) => (RANK[next] > RANK[cur] ? next : cur));
+  }, []);
   const [wait, setWait] = useState<WaitInfo | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +59,28 @@ export function useTrip(booking: DriverBooking) {
   }, [booking.arrivedAt, booking.startedAt]);
 
   const waiting = useWaitingClock(wait, step === "arrived");
+
+  /* Catch up with the server: on return to the app and when the server says
+     the trip started. Only ever moves forward (see RANK). */
+  const resync = useCallback(() => {
+    driverApi.activeBooking()
+      .then(({ booking: live }) => {
+        if (!live || live.id !== booking.id) return;
+        if (live.startedAt) setWait(null);
+        advance(stepOf(live));
+        if (live.arrivedAt || live.startedAt) {
+          onProgress?.({ ...(live.arrivedAt ? { arrivedAt: live.arrivedAt } : {}), ...(live.startedAt ? { startedAt: live.startedAt } : {}) });
+        }
+      })
+      .catch(() => { /* offline — the next foreground retries */ });
+  }, [booking.id, advance, onProgress]);
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (s) => { if (s === "active") resync(); });
+    const offStarted = on(SOCKET_EVENTS.TRIP_STARTED, (data) => {
+      if ((data as { bookingId?: string }).bookingId === booking.id) advance("started");
+    });
+    return () => { sub.remove(); offStarted(); };
+  }, [resync, on, booking.id, advance]);
 
   /* Location goes to the rider only while the trip is under way */
   useEffect(() => {
@@ -84,19 +117,22 @@ export function useTrip(booking: DriverBooking) {
       freeMin: d.freeWaitingMinutes ?? DEFAULT_FREE_MIN,
       rate: d.waitingRatePerMin ?? DEFAULT_RATE,
     });
-    setStep("arrived");
+    advance("arrived");
+    onProgress?.({ arrivedAt: d.arrivedAt });
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   }, "Couldn't update the ride — check your connection and try again.");
 
   const start = () => run(async () => {
+    let startedAt = new Date().toISOString();
     try {
-      await driverApi.startTrip(booking.id);
+      startedAt = (await driverApi.startTrip(booking.id)).startedAt ?? startedAt;
     } catch (e) {
       /* Already started (double tap / retry) — carry on */
       if (!(e instanceof ApiError && e.status === 409)) throw e;
     }
     setWait(null);
-    setStep("started");
+    advance("started");
+    onProgress?.({ startedAt });
   }, "Couldn't start the trip — check your connection and try again.");
 
   const complete = () => run(async () => {
@@ -105,7 +141,7 @@ export function useTrip(booking: DriverBooking) {
     } catch (e) {
       if (!(e instanceof ApiError && e.status === 409 && /already completed/i.test(e.message))) throw e;
     }
-    setStep("completed");
+    advance("completed");
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   }, "Couldn't end the ride — check your connection and try again.");
 

@@ -7,10 +7,11 @@ export default function AppTabs() {
   /* Signed in: this phone receives the rider's ride updates */
   useEffect(() => { registerForPush(); }, []);
 
-  /* A ride update opens that ride */
+  /* A chauffeur's message opens the chat; any other ride update opens that ride */
   useEffect(() => onNotificationTap((data) => {
     if (data.type === "test") return;
-    if (data.bookingId) router.navigate({ pathname: "/ride/[id]", params: { id: data.bookingId } });
+    if (data.type === "new_message_rider" && data.bookingId) router.navigate({ pathname: "/ride/chat/[id]", params: { id: data.bookingId } });
+    else if (data.bookingId) router.navigate({ pathname: "/ride/[id]", params: { id: data.bookingId } });
     else router.navigate("/");
   }), []);
 

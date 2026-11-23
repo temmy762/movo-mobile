@@ -21,6 +21,8 @@ import { useSocket } from "@/lib/socket";
 import { RouteChangeSheet } from "@/components/RouteChangeSheet";
 import { TipCard } from "@/components/TipCard";
 import { EmergencyButton } from "@/components/EmergencyButton";
+import { CountBadge } from "@/components/CountBadge";
+import { useUnreadCount } from "@/lib/unreadMessages";
 import { canCancel, cancelPolicy, headline, isLive, ridePhase, type RidePhase } from "@/lib/ridePhase";
 
 const POLL_MS = 8_000;
@@ -60,6 +62,7 @@ export default function Ride() {
   const r = ride.data;
   const phase: RidePhase | null = r ? ridePhase(r) : null;
   const live = !!phase && isLive(phase);
+  const unread = useUnreadCount(id);
 
   /* Live updates for this booking */
   useEffect(() => {
@@ -181,7 +184,7 @@ export default function Ride() {
 
   return (
     <View style={styles.screen}>
-      <MapView ref={map} style={styles.map} initialRegion={WINNIPEG} showsUserLocation={live} toolbarEnabled={false}>
+      <MapView ref={map} style={styles.map} initialRegion={WINNIPEG} showsUserLocation={live} toolbarEnabled={false} userInterfaceStyle="light">
         {route && (
           <Polyline coordinates={route.coordinates} strokeColor={colors.navy} strokeWidth={4}
             lineDashPattern={route.exact ? undefined : [8, 8]} />
@@ -203,7 +206,7 @@ export default function Ride() {
 
       <ScrollView style={styles.sheet} contentContainerStyle={styles.sheetBody}>
         <View style={styles.between}>
-          <Text style={styles.kicker}>{r.bookingType === "CARE" ? "Safe Ride" : r.carName}{r.bookingNumber ? ` · ${r.bookingNumber}` : ""}</Text>
+          <Text style={styles.kicker}>{r.bookingType === "CARE" ? "Safe Ride" : r.carName}</Text>
           {live && <View style={styles.liveDot} />}
         </View>
         <Text style={styles.title}>{h.title}</Text>
@@ -235,8 +238,10 @@ export default function Ride() {
               </Pressable>
             )}
             <Pressable onPress={() => router.push({ pathname: "/ride/chat/[id]", params: { id, number: r.bookingNumber ?? "" } })}
-              style={styles.round} accessibilityRole="button" accessibilityLabel="Message your chauffeur">
+              style={styles.round} accessibilityRole="button"
+              accessibilityLabel={unread > 0 ? `Message your chauffeur, ${unread} unread` : "Message your chauffeur"}>
               <Icon name="message" size={17} color={colors.navy} />
+              <CountBadge count={unread} />
             </Pressable>
           </View>
         )}

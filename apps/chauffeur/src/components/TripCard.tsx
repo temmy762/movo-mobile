@@ -6,7 +6,8 @@ import { useState } from "react";
 import { Alert, Text, View } from "react-native";
 import type { DriverBooking } from "@movo/shared";
 import { Icon } from "@movo/ui";
-import { useTrip } from "@/lib/useTrip";
+import { useTrip, type TripProgress } from "@/lib/useTrip";
+import { useUnreadCount } from "@/lib/unreadMessages";
 import { router } from "expo-router";
 import { Route, dark, kit, money } from "./homeKit";
 import {
@@ -15,12 +16,15 @@ import {
 } from "./tripParts";
 import { EmergencyButton } from "./EmergencyButton";
 
-export function TripCard({ booking, onFinished }: {
+export function TripCard({ booking, onFinished, onProgress }: {
   booking: DriverBooking;
   /** handedBack: the chauffeur cancelled and the ride went to someone else */
   onFinished: (handedBack: boolean) => void;
+  /** Arrived / started, as confirmed by the server */
+  onProgress?: (p: TripProgress) => void;
 }) {
-  const trip = useTrip(booking);
+  const trip = useTrip(booking, onProgress);
+  const unread = useUnreadCount(booking.id);
   const [showCancel, setShowCancel] = useState(false);
   const phone = booking.riderPhone ?? booking.user?.phone;
   const number = booking.bookingNumber ?? booking.id.slice(0, 8);
@@ -67,7 +71,7 @@ export function TripCard({ booking, onFinished }: {
         {phone && trip.step !== "started" ? (
           <SquareButton icon="phone" label="Call rider" onPress={() => callNumber(phone)} />
         ) : null}
-        <SquareButton icon="message" label="Chat with rider" onPress={() => openChat(booking.id, booking.bookingNumber)} />
+        <SquareButton icon="message" label="Chat with rider" badge={unread} onPress={() => openChat(booking.id, booking.bookingNumber)} />
         <SquareButton icon="navigation" label={beforeStart ? "Navigate to pickup" : "Navigate to destination"}
           onPress={() => openNavigation(destination)} />
         {trip.step === "accepted" && (

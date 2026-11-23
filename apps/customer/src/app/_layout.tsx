@@ -12,6 +12,7 @@ import { app as appApi } from "@movo/api";
 import { ArrivalIntro, UpdateRequired, Welcome, colors, isOlder, type WelcomeCard } from "@movo/ui";
 import { useSession } from "@/lib/session";
 import { SocketProvider } from "@/lib/socket";
+import { MessageBanner } from "@/components/MessageBanner";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -92,9 +93,10 @@ export default function RootLayout() {
               <Stack.Screen name="payment-methods" />
               <Stack.Screen name="notifications" />
               <Stack.Screen name="edit-profile" />
-              <Stack.Screen name="help" />
-            </Stack.Protected>
-          </Stack>
+            <Stack.Screen name="help" />
+          </Stack.Protected>
+        </Stack>
+          {signedIn && <MessageBanner />}
         </SocketProvider>
       </QueryClientProvider>
   );

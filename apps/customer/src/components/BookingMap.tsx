@@ -65,7 +65,7 @@ export function BookingMap({ pickup, dropoff }: { pickup: string; dropoff: strin
 
   return (
     <View style={styles.wrap}>
-      <MapView ref={map} style={styles.map} initialRegion={WINNIPEG} showsUserLocation={!!here} toolbarEnabled={false}
+      <MapView ref={map} style={styles.map} initialRegion={WINNIPEG} showsUserLocation={!!here} toolbarEnabled={false} userInterfaceStyle="light"
         scrollEnabled={false} zoomEnabled={false} rotateEnabled={false} pitchEnabled={false}
         accessibilityLabel={from.point && to.point ? "Map of your route" : "Map"}>
         {route && (

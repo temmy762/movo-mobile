@@ -16,17 +16,6 @@ export type MapPin = { coordinate: LatLng; kind: "pickup" | "dropoff" | "rider";
 
 const WINNIPEG = { latitude: 49.8951, longitude: -97.1384, latitudeDelta: 0.12, longitudeDelta: 0.12 };
 
-/* Muted dark style to match the dark Home (Android / Google Maps) */
-const DARK_STYLE = [
-  { elementType: "geometry", stylers: [{ color: "#1d2030" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#8a8fa3" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#14141c" }] },
-  { featureType: "poi", stylers: [{ visibility: "off" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#2c3045" }] },
-  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#3a3f58" }] },
-  { featureType: "transit", stylers: [{ visibility: "off" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#0e1220" }] },
-];
 
 /* routeTo: where the chauffeur is heading now (pickup, then drop-off) — a route line from their position */
 export function HomeMap({ pins, routeTo = null, height = 220 }: { pins: MapPin[]; routeTo?: LatLng | null; height?: number }) {
@@ -60,8 +49,7 @@ export function HomeMap({ pins, routeTo = null, height = 220 }: { pins: MapPin[]
         showsUserLocation
         showsMyLocationButton={false}
         toolbarEnabled={false}
-        userInterfaceStyle="dark"
-        customMapStyle={DARK_STYLE}
+        userInterfaceStyle="light"
         onUserLocationChange={(e) => {
           const c = e.nativeEvent.coordinate;
           if (!c) return;

@@ -41,6 +41,11 @@ Notifications?.setNotificationHandler({
   handleNotification: async (n) => {
     /* Online, Home already rings for requests; offline (a reservation sent
        to every chauffeur) the banner is the only way to hear about it */
+    const data = n.request.content.data as { type?: string } | undefined;
+    /* A chat message while the app is open: the in-app pop-up shows it instead */
+    if (data?.type === "new_message_driver") {
+      return { shouldShowBanner: false, shouldShowList: true, shouldPlaySound: false, shouldSetBadge: false };
+    }
     const quiet = isRequestPush(n.request.content.data) && (await SecureStore.getItemAsync(ONLINE_KEY)) === "true";
     return {
       shouldShowBanner: !quiet,

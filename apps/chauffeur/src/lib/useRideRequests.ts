@@ -172,6 +172,12 @@ export function useRideRequests({ online, onAccepted }: {
     backToSearching();
   }, [booking, backToSearching]);
 
+  /** Arrived / started confirmed by the server: keep the held copy current, so
+      the trip card is rebuilt at the right step if the screen is recreated */
+  const patchActive = useCallback((p: Partial<DriverBooking>) => {
+    setBooking((b) => (b ? { ...b, ...p } : b));
+  }, []);
+
   /** The held ride ended. A ride handed back goes to the pool again — never re-offer it here. */
   const finishActive = useCallback((handedBack?: boolean) => {
     if (handedBack && booking) declined.current.add(booking.id);
@@ -180,7 +186,7 @@ export function useRideRequests({ online, onAccepted }: {
 
   return {
     phase, booking, timeLeft, acting, notice,
-    accept, decline, finishActive, restoreActive,
+    accept, decline, finishActive, restoreActive, patchActive,
     clearNotice: () => setNotice(null),
   };
 }

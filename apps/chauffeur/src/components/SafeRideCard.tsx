@@ -15,6 +15,7 @@ import {
 } from "./tripParts";
 import { WalkAround } from "./WalkAround";
 import { EmergencyButton } from "./EmergencyButton";
+import { useUnreadCount } from "@/lib/unreadMessages";
 
 type SafeRide = ReturnType<typeof useSafeRide>;
 
@@ -127,10 +128,11 @@ export function SafeRideCard({ safe }: { safe: SafeRide }) {
   const primary = a.role === "PRIMARY";
   const phone = a.booking.riderPhone ?? a.booking.user?.phone;
   const uberReturn = a.booking.returnMode === "UBER";
+  const unread = useUnreadCount(primary ? a.booking.id : null);
   /* SUPPORT may collect PRIMARY only once the customer is delivered */
   const waitingOnPrimary = !primary && safe.coDriver?.status !== "AWAITING_RETURN";
   const chat = primary
-    ? <SquareButton icon="message" label="Chat with customer" onPress={() => openChat(a.booking.id, a.booking.bookingNumber)} />
+    ? <SquareButton icon="message" label="Chat with customer" badge={unread} onPress={() => openChat(a.booking.id, a.booking.bookingNumber)} />
     : null;
   const navTarget = primary
     ? (safe.phase === "started" ? a.booking.dropoff : a.booking.pickup)

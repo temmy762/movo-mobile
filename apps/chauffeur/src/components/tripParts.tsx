@@ -6,6 +6,7 @@ import { router } from "expo-router";
 import { Icon, colors, fonts } from "@movo/ui";
 import type { WaitingClock } from "@/lib/waiting";
 import { dark, gradient, kit } from "./homeKit";
+import { CountBadge } from "./CountBadge";
 
 export function openNavigation(destination: string) {
   const dest = encodeURIComponent(destination);
@@ -39,10 +40,16 @@ export function OutlineButton({ title, onPress, disabled }: { title: string; onP
 export const openChat = (bookingId: string, number?: string | null) =>
   router.push({ pathname: "/chat/[bookingId]", params: { bookingId, ...(number ? { number } : {}) } });
 
-export function SquareButton({ icon, label, onPress }: { icon: "navigation" | "phone" | "message"; label: string; onPress: () => void }) {
+export function SquareButton({ icon, label, onPress, badge = 0 }: {
+  icon: "navigation" | "phone" | "message"; label: string; onPress: () => void;
+  /** Unread chat messages, shown as a number bubble */
+  badge?: number;
+}) {
   return (
-    <Pressable onPress={onPress} style={[kit.btnOutline, parts.square]} accessibilityRole="button" accessibilityLabel={label}>
+    <Pressable onPress={onPress} style={[kit.btnOutline, parts.square]} accessibilityRole="button"
+      accessibilityLabel={badge > 0 ? `${label}, ${badge} unread` : label}>
       <Icon name={icon} size={18} color={dark.soft} />
+      <CountBadge count={badge} />
     </Pressable>
   );
 }
