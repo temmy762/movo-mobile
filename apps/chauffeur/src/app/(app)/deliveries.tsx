@@ -12,7 +12,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useFocusEffect } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { courier } from "@movo/api";
-import { SOCKET_EVENTS } from "@movo/shared";
+import { SOCKET_EVENTS, pickupWhenLabel } from "@movo/shared";
 import { colors, fonts } from "@movo/ui";
 import { useSocket } from "@/lib/socket";
 
@@ -21,7 +21,8 @@ type Job = courier.CourierJob;
 type Outcome = courier.CourierOutcome;
 
 const money = (n: number | null | undefined) => (n == null ? "—" : `$${n.toFixed(2)}`);
-const when = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Winnipeg", weekday: "short", month: "short", day: "numeric" });
+/* "Tue, Nov 25 · 3:30 pm" or "Tue, Nov 25 · Morning (9 am – 12 pm)" */
+const when = (j: courier.CourierOffer) => pickupWhenLabel(j);
 const SIZE: Record<string, string> = { SMALL: "Small", MEDIUM: "Medium", LARGE: "Large" };
 const mapsTo = (addr: string) => Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(addr)}`);
 
@@ -64,7 +65,7 @@ function JobCard({ job, refresh }: { job: Job; refresh: () => void }) {
     const file = await takePhoto();
     if (file) run(() => courier.withPhoto(job.id, action, file, action === "deliver" ? outcome : undefined));
   };
-  const cancel = () => Alert.alert("Can't do this delivery?", `It goes back to other drivers and the customer is told.${job.scheduledAt ? " Cancelling a Scheduled run less than 2 hours before counts as a late cancel; repeated late cancels stop Scheduled offers." : ""}`, [
+  const cancel = () => Alert.alert("Can't do this delivery?", `It goes back to other drivers and the customer is told.${job.scheduledAt ? " Cancelling a booked-ahead delivery less than 2 hours before pickup counts as a late cancel; repeated late cancels stop booked-ahead offers." : ""}`, [
     { text: "Keep it", style: "cancel" },
     { text: "Cancel it", style: "destructive", onPress: () => run(() => courier.act(job.id, "cancel")) },
   ]);
@@ -81,7 +82,7 @@ function JobCard({ job, refresh }: { job: Job; refresh: () => void }) {
   return (
     <View style={styles.card}>
       <View style={styles.between}>
-        <Text style={styles.kicker}>{job.mode === "SCHEDULED" ? "SCHEDULED" : "ONE WAY"}{job.scheduledAt ? ` · ${when(job.scheduledAt)}` : ""} · {job.bookingNumber}</Text>
+        <Text style={styles.kicker}>{job.mode === "SCHEDULED" ? "SCHEDULED" : "ONE WAY"}{job.scheduledAt ? ` · ${when(job)}` : ""} · {job.bookingNumber}</Text>
         <Text style={styles.pay}>{money(job.payout)}</Text>
       </View>
       <Text style={styles.label}>{job.pickedUpAt ? "Deliver to" : "Pick up at"}</Text>
@@ -99,7 +100,7 @@ function JobCard({ job, refresh }: { job: Job; refresh: () => void }) {
       {door && <Text style={styles.door}>{paid ? "Paid at the door ✓" : `Receiver pays ${money(job.total)} by card at the door`}</Text>}
 
       <View style={{ gap: 8, marginTop: 10 }}>
-        {upcoming ? <Text style={styles.muted}>Scheduled for {when(job.scheduledAt!)}. Start it on the day.</Text>
+        {upcoming ? <Text style={styles.muted}>Pickup {when(job)}. Start it on the day.</Text>
           : !job.enRouteAt ? <Btn label="Heading to pickup" busy={busy} onPress={() => run(() => courier.act(job.id, "en_route"))} />
             : !job.pickedUpAt ? (!job.arrivedAt
               ? <Btn label="I'm at the pickup" busy={busy} onPress={() => run(() => courier.act(job.id, "arrived"))} />
@@ -229,7 +230,7 @@ export default function Deliveries() {
               {offers.map((o) => (
                 <View key={o.id} style={styles.card}>
                   <View style={styles.between}>
-                    <Text style={styles.kicker}>{o.mode === "SCHEDULED" ? "SCHEDULED" : "ONE WAY"}{o.scheduledAt ? ` · ${when(o.scheduledAt)}` : " · NOW"} · {o.town.toUpperCase()}</Text>
+                    <Text style={styles.kicker}>{o.mode === "SCHEDULED" ? "SCHEDULED" : "ONE WAY"}{o.scheduledAt ? ` · ${when(o)}` : " · NOW"} · {o.town.toUpperCase()}</Text>
                     <Text style={styles.payBig}>{money(o.payout)}</Text>
                   </View>
                   <Text style={styles.body}><Text style={styles.muted}>From </Text>{o.pickup}</Text>

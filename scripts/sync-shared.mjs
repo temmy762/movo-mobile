@@ -28,6 +28,7 @@ const FILES = [
   ["lib/winnipegTime.ts", "winnipegTime.ts", relink],
   ["lib/launchConfig.ts", "launchConfig.ts", relink],
   ["lib/vehicleModels.ts", "vehicleModels.ts", relink],
+  ["lib/courier/pricing.ts", "courierPricing.ts", relink],
   ["prisma/schema.prisma", "enums.ts", prismaEnums],
 ];
 

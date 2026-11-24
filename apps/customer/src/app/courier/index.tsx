@@ -13,6 +13,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router, usePreventRemove } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { ApiError, courier } from "@movo/api";
+import { ONE_WAY_LATER, PICKUP_WINDOWS, oneWayTimeSlots, timeLabel, winnipegNowTime, winnipegToday, type PickupWindow } from "@movo/shared";
 
 import { Icon, colors, fonts } from "@movo/ui";
 import { useSession } from "@/lib/session";
@@ -35,6 +36,26 @@ const money = (n: number) => `$${n.toFixed(2)}`;
 const dayLabel = (ymd: string) => new Date(`${ymd}T12:00:00Z`).toLocaleDateString("en-CA", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
 const hourLabel = (h: number) => `${((h + 11) % 12) + 1} ${h < 12 ? "am" : "pm"}`;
 const phoneOk = (p: string) => p.replace(/\D/g, "").length >= 10;
+const addDays = (ymd: string, n: number) => {
+  const d = new Date(`${ymd}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+const toMins = (hhmm: string) => { const [h, m] = hhmm.split(":").map(Number); return h * 60 + m; };
+
+/* Bookable later-pickup days and times, from when the screen opened (Winnipeg) */
+function laterSlots() {
+  const today = winnipegToday();
+  const earliest = toMins(winnipegNowTime()) + ONE_WAY_LATER.minLeadMinutes;
+  const all = oneWayTimeSlots();
+  const days: { date: string; times: string[] }[] = [];
+  for (let i = 0; i < ONE_WAY_LATER.maxDaysAhead; i++) {
+    const date = addDays(today, i);
+    const times = i === 0 ? all.filter((t) => toMins(t) >= earliest) : all;
+    if (times.length) days.push({ date, times });
+  }
+  return { today, days };
+}
 
 function Label({ children }: { children: ReactNode }) { return <Text style={styles.label}>{children}</Text>; }
 
@@ -79,6 +100,11 @@ export default function CourierBooking() {
 
   const [mode, setMode] = useState<CourierMode>("ONE_WAY");
   const [runDate, setRunDate] = useState("");
+  const [pickupWhen, setPickupWhen] = useState<"ASAP" | "LATER">("ASAP");
+  const [pickupDate, setPickupDate] = useState("");
+  const [pickupTime, setPickupTime] = useState("");
+  const [pickupWindow, setPickupWindow] = useState<PickupWindow | null>(null);
+  const [later] = useState(laterSlots);
 
   const [description, setDescription] = useState("");
   const [size, setSize] = useState<PackageSize | null>(null);
@@ -122,6 +148,8 @@ export default function CourierBooking() {
     }
     if (step === 2) {
       if (mode === "SCHEDULED" && !runDate) return setError("Choose a delivery day.");
+      if (mode === "SCHEDULED" && !pickupWindow) return setError("Choose a pickup window.");
+      if (mode === "ONE_WAY" && pickupWhen === "LATER" && (!pickupDate || !pickupTime)) return setError("Choose a pickup day and time.");
       return setStep(3);
     }
     if (!estimate) {
@@ -137,6 +165,9 @@ export default function CourierBooking() {
       try {
         setEstimate(await courier.estimate({
           routeId, direction, mode, runDate: mode === "SCHEDULED" ? runDate : null,
+          pickupDate: mode === "ONE_WAY" && pickupWhen === "LATER" ? pickupDate : null,
+          pickupTime: mode === "ONE_WAY" && pickupWhen === "LATER" ? pickupTime : null,
+          pickupWindow: mode === "SCHEDULED" ? pickupWindow : null,
           winnipegAddress, townAddress, extraStops: stops.filter(Boolean),
           package: { description: description.trim(), size, value: Number(value), weightKg: weightLb ? Number(weightLb) / 2.20462 : null },
           orderedBy, payMethod: pay, sender: { name: sender.name.trim(), phone: sender.phone.trim() },
@@ -240,7 +271,7 @@ export default function CourierBooking() {
                 <Text style={styles.title}>How fast?</Text>
                 <Text style={styles.muted}>{direction === "TO_TOWN" ? `Winnipeg → ${route.town}` : `${route.town} → Winnipeg`}</Text>
                 {([
-                  { id: "ONE_WAY" as const, t: "One Way", p: route.oneWayPrice, d: "Picked up now and delivered straight there." },
+                  { id: "ONE_WAY" as const, t: "One Way", p: route.oneWayPrice, d: "Picked up now or at a time you choose, and delivered straight there." },
                   { id: "SCHEDULED" as const, t: "Scheduled", p: route.scheduledPrice, d: `On the ${route.town} run (${route.runDaysLabel}). Book by ${hourLabel(limits.scheduledCutoffHour)} the day before.` },
                 ]).map((m) => (
                   <Pressable key={m.id} onPress={() => { setMode(m.id); reprice(); }} style={[styles.option, mode === m.id && styles.optionOn]}
@@ -249,6 +280,48 @@ export default function CourierBooking() {
                     <Text style={styles.muted}>{m.d}</Text>
                   </Pressable>
                 ))}
+                {mode === "ONE_WAY" && (
+                  <>
+                    <Label>Pickup time *</Label>
+                    <Segments value={pickupWhen} onChange={(v) => { setPickupWhen(v); reprice(); }} options={[
+                      { v: "ASAP", l: "As soon as possible" }, { v: "LATER", l: "Choose a time" },
+                    ]} />
+                    {pickupWhen === "LATER" && (
+                      <>
+                        <Label>Day</Label>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+                          {later.days.map((d) => (
+                            <Pressable key={d.date} style={[styles.chip, pickupDate === d.date && styles.chipOn]}
+                              onPress={() => { setPickupDate(d.date); if (!d.times.includes(pickupTime)) setPickupTime(""); reprice(); }}
+                              accessibilityRole="radio" accessibilityState={{ selected: pickupDate === d.date }}>
+                              <Text style={[styles.chipText, pickupDate === d.date && { color: "#fff" }]}>
+                                {d.date === later.today ? "Today" : d.date === addDays(later.today, 1) ? "Tomorrow" : dayLabel(d.date)}
+                              </Text>
+                            </Pressable>
+                          ))}
+                        </ScrollView>
+                        {!!pickupDate && (
+                          <>
+                            <Label>Time</Label>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+                              {(later.days.find((d) => d.date === pickupDate)?.times ?? []).map((t) => (
+                                <Pressable key={t} onPress={() => { setPickupTime(t); reprice(); }} style={[styles.chip, pickupTime === t && styles.chipOn]}
+                                  accessibilityRole="radio" accessibilityState={{ selected: pickupTime === t }}>
+                                  <Text style={[styles.chipText, pickupTime === t && { color: "#fff" }]}>{timeLabel(t)}</Text>
+                                </Pressable>
+                              ))}
+                            </ScrollView>
+                          </>
+                        )}
+                      </>
+                    )}
+                    <Text style={styles.muted}>
+                      {pickupWhen === "ASAP"
+                        ? "We offer it to nearby drivers right away."
+                        : `Pickups between ${hourLabel(ONE_WAY_LATER.firstHour)} and ${hourLabel(ONE_WAY_LATER.lastHour)}, at least an hour from now. If no driver accepts by the pickup time, you're refunded in full.`}
+                    </Text>
+                  </>
+                )}
                 {mode === "SCHEDULED" && (
                   <>
                     <Label>Delivery day *</Label>
@@ -257,6 +330,15 @@ export default function CourierBooking() {
                         <Pressable key={d} onPress={() => { setRunDate(d); reprice(); }} style={[styles.chip, runDate === d && styles.chipOn]}
                           accessibilityRole="radio" accessibilityState={{ selected: runDate === d }}>
                           <Text style={[styles.chipText, runDate === d && { color: "#fff" }]}>{dayLabel(d)}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                    <Label>Pickup window *</Label>
+                    <View style={{ flexDirection: "row", gap: 8 }}>
+                      {PICKUP_WINDOWS.map((w) => (
+                        <Pressable key={w.id} onPress={() => { setPickupWindow(w.id); reprice(); }} style={[styles.size, pickupWindow === w.id && styles.optionOn]}
+                          accessibilityRole="radio" accessibilityState={{ selected: pickupWindow === w.id }} accessibilityLabel={`${w.label}: ${w.hint}`}>
+                          <Text style={styles.optTitle}>{w.label}</Text><Text style={[styles.muted, { textAlign: "center" }]}>{w.hint}</Text>
                         </Pressable>
                       ))}
                     </View>
@@ -337,6 +419,9 @@ export default function CourierBooking() {
                 {estimate && (
                   <View style={styles.price}>
                     <View style={styles.between}><Text style={styles.line}>{mode === "SCHEDULED" ? "Scheduled" : "One Way"} delivery · {route.town}</Text><Text style={styles.line}>{money(estimate.routePrice)}</Text></View>
+                    <Text style={styles.muted}>Pickup: {mode === "SCHEDULED"
+                      ? `${dayLabel(runDate)} · ${PICKUP_WINDOWS.find((w) => w.id === pickupWindow)?.label ?? ""} (${PICKUP_WINDOWS.find((w) => w.id === pickupWindow)?.hint ?? ""})`
+                      : pickupWhen === "LATER" && pickupDate && pickupTime ? `${dayLabel(pickupDate)} · ${timeLabel(pickupTime)}` : "As soon as possible"}</Text>
                     {estimate.extraStopsTotal > 0 && <View style={styles.between}><Text style={styles.line}>Extra pickups</Text><Text style={styles.line}>+{money(estimate.extraStopsTotal)}</Text></View>}
                     <View style={[styles.between, styles.totalRow]}><Text style={styles.total}>Total</Text><Text style={styles.total}>{money(estimate.total)}</Text></View>
                     <Text style={styles.muted}>CAD, GST included. {limits.freeWaitingMinutes} minutes free waiting at each stop, then ${limits.waitingRatePerMin.toFixed(2)}/min.</Text>
@@ -399,6 +484,7 @@ const styles = StyleSheet.create({
   size: { flex: 1, backgroundColor: "#fff", borderRadius: 12, borderWidth: 2, borderColor: "#e5e7eb", padding: 8, alignItems: "center", gap: 2 },
   between: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  chipRow: { flexDirection: "row", gap: 8, paddingVertical: 2 },
   chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, borderWidth: 1, borderColor: "#e5e7eb", backgroundColor: "#fff" },
   chipOn: { backgroundColor: colors.navy, borderColor: colors.navy },
   chipText: { fontFamily: fonts.bodySemi, fontSize: 12, color: "#374151" },

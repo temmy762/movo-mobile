@@ -13,6 +13,7 @@ import { Icon, colors, fonts } from "@movo/ui";
 import { useSession } from "@/lib/session";
 import { BookingMap } from "@/components/BookingMap";
 import { TipCard } from "@/components/TipCard";
+import { pickupWhenLabel } from "@movo/shared";
 
 type Party = { name: string; phone: string };
 type CourierBooking = {
@@ -23,7 +24,7 @@ type CourierBooking = {
   rating: number | null; review: string | null; tip: number | null;
   courierPayMethod: string | null; courierPickupPhotoUrl: string | null; courierDropoffPhotoUrl: string | null;
   courierPickedUpAt: string | null; courierOutcome: string | null;
-  courier: { town: string; mode: "ONE_WAY" | "SCHEDULED"; package: { description: string; size: string; value: number }; sender: Party; receiver: Party; leaveAtDoor: boolean } | null;
+  courier: { town: string; mode: "ONE_WAY" | "SCHEDULED"; pickupWindow?: string | null; package: { description: string; size: string; value: number }; sender: Party; receiver: Party; leaveAtDoor: boolean } | null;
   driver: { firstName: string; phone: string | null; vehicle: { make: string; model: string; plate: string } | null } | null;
 };
 
@@ -75,7 +76,8 @@ function RateDriver({ id, name, rating, review, onSaved }: { id: string; name?: 
     </View>
   );
 }
-const day = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/Winnipeg", weekday: "long", month: "short", day: "numeric" });
+const day = (b: CourierBooking) =>
+  pickupWhenLabel({ mode: b.courier?.mode ?? "ONE_WAY", scheduledAt: b.scheduledAt, pickupWindow: b.courier?.pickupWindow });
 
 function headline(b: CourierBooking) {
   if (b.status === "CANCELLED") return b.cancelledBy === "system_timeout" ? "No driver was available" : "Delivery cancelled";
@@ -83,8 +85,8 @@ function headline(b: CourierBooking) {
   if (b.courierPickedUpAt) return "Your package is on its way";
   if (b.arrivedAt) return "Driver at the pickup";
   if (b.enRouteAt) return "Driver on the way to the pickup";
-  if (b.driver) return b.scheduledAt ? `Driver confirmed for ${day(b.scheduledAt)}` : "Driver confirmed";
-  return b.scheduledAt ? `Booked for ${day(b.scheduledAt)}` : "Finding a driver";
+  if (b.driver) return b.scheduledAt ? `Driver confirmed for ${day(b)}` : "Driver confirmed";
+  return b.scheduledAt ? `Booked for ${day(b)}` : "Finding a driver";
 }
 
 export default function CourierTracking() {

@@ -22,6 +22,8 @@ export type CourierLimits = {
 
 export type CourierOrder = {
   routeId: string; direction: CourierDirection; mode: CourierMode; runDate: string | null;
+  /* One Way: Winnipeg date + time (both null = as soon as possible). Scheduled: the pickup window. */
+  pickupDate: string | null; pickupTime: string | null; pickupWindow: "MORNING" | "AFTERNOON" | null;
   winnipegAddress: string; townAddress: string; extraStops: string[];
   package: { description: string; size: PackageSize; value: number; weightKg: number | null };
   orderedBy: "SENDER" | "RECEIVER"; payMethod: "APP" | "DOOR";
@@ -42,7 +44,7 @@ export const book = (quote: string, stripePaymentIntentId?: string) =>
 
 export type CourierOffer = {
   id: string; bookingNumber: string | null; pickup: string; dropoff: string; stops: string[];
-  scheduledAt: string | null; town: string; direction: CourierDirection; mode: CourierMode;
+  scheduledAt: string | null; town: string; direction: CourierDirection; mode: CourierMode; pickupWindow: string | null;
   package: { description: string; size: PackageSize; value: number; weightKg: number | null };
   payMethod: "APP" | "DOOR" | null; payout: number | null;
 };

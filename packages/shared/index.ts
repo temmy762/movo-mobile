@@ -6,3 +6,4 @@ export * from "./launchConfig";
 export * from "./enums";
 export * from "./types";
 export * from "./vehicleModels";
+export * from "./courierPricing";
