@@ -1,11 +1,22 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Tabs, router } from "expo-router";
+import { useQuery } from "@tanstack/react-query";
+import { driver as driverApi } from "@movo/api";
 import { Icon, colors, fonts } from "@movo/ui";
 import { onNotificationTap, registerForPush } from "@/lib/push";
 
 export default function AppTabs() {
   /* Signed in and approved: this phone receives the chauffeur's alerts */
   useEffect(() => { registerForPush(); }, []);
+
+  /* Courier drivers do Movo Courier only: no Home (City Rides) or Rides tab */
+  const services = useQuery({ queryKey: ["driver-services"], queryFn: driverApi.services, staleTime: 5 * 60_000 });
+  const courierOnly = services.data?.kind === "COURIER";
+  const courierOnlyRef = useRef(courierOnly);
+  useEffect(() => {
+    courierOnlyRef.current = courierOnly;
+    if (courierOnly) router.replace("/deliveries");
+  }, [courierOnly]);
 
   /* A rider's message opens the chat; every other alert is handled on Home
      (requests, trips, Safe Ride), which re-reads its state on foreground */
@@ -14,7 +25,7 @@ export default function AppTabs() {
     if (data.type === "new_message_driver" && data.bookingId) router.navigate({ pathname: "/chat/[bookingId]", params: { bookingId: data.bookingId } });
     /* Movo Courier offers open the Deliveries tab */
     else if (data.service === "courier") router.navigate("/deliveries");
-    else router.navigate("/");
+    else router.navigate(courierOnlyRef.current ? "/deliveries" : "/");
   }), []);
 
   return (
@@ -27,8 +38,8 @@ export default function AppTabs() {
           sceneStyle: { backgroundColor: colors.background },
         }}
       >
-        <Tabs.Screen name="index" options={{ title: "Home", tabBarIcon: ({ color }) => <Icon name="home" color={color} /> }} />
-        <Tabs.Screen name="planned" options={{ title: "Rides", tabBarIcon: ({ color }) => <Icon name="clock" color={color} /> }} />
+        <Tabs.Screen name="index" options={{ title: "Home", href: courierOnly ? null : undefined, tabBarIcon: ({ color }) => <Icon name="home" color={color} /> }} />
+        <Tabs.Screen name="planned" options={{ title: "Rides", href: courierOnly ? null : undefined, tabBarIcon: ({ color }) => <Icon name="clock" color={color} /> }} />
         <Tabs.Screen name="deliveries" options={{ title: "Deliveries", tabBarIcon: ({ color }) => <Icon name="list" color={color} /> }} />
         <Tabs.Screen name="wallet" options={{ title: "Wallet", tabBarIcon: ({ color }) => <Icon name="wallet" color={color} /> }} />
         <Tabs.Screen name="profile" options={{ title: "Profile", tabBarIcon: ({ color }) => <Icon name="user" color={color} /> }} />

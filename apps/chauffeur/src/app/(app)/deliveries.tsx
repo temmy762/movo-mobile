@@ -201,6 +201,10 @@ export default function Deliveries() {
     try { await courier.setEnabled(v); refetch(); }
     catch (e) { Alert.alert("Couldn't update", e instanceof Error ? e.message : "Please try again."); }
   };
+  const requestAccess = async () => {
+    try { await courier.requestAccess(); refetch(); }
+    catch (e) { Alert.alert("Couldn't send your request", e instanceof Error ? e.message : "Please try again."); }
+  };
   const accept = async (o: Offer) => {
     setBusyId(o.id);
     try { await courier.act(o.id, "accept"); }
@@ -213,11 +217,25 @@ export default function Deliveries() {
     <SafeAreaView edges={["top"]} style={{ flex: 1, backgroundColor: colors.background }}>
       <View style={styles.header}>
         <Text style={styles.h1}>Courier deliveries</Text>
-        {s && <Switch value={s.courierEnabled} onValueChange={toggle} trackColor={{ true: colors.navy }} accessibilityLabel="Courier deliveries" />}
+        {s?.courierAccess === "APPROVED" && <Switch value={s.courierEnabled} onValueChange={toggle} trackColor={{ true: colors.navy }} accessibilityLabel="Courier deliveries" />}
       </View>
       {!s ? (q.isError ? <Text style={[styles.muted, { margin: 24 }]}>Couldn&apos;t load deliveries. Pull to refresh.</Text> : <ActivityIndicator style={{ marginTop: 40 }} color={colors.navy} />) : (
         <ScrollView contentContainerStyle={styles.page} refreshControl={<RefreshControl refreshing={q.isFetching} onRefresh={() => { refetch(); }} />}>
-          {!s.courierEnabled && <Text style={[styles.card, styles.body]}>Turn on Courier to get same-day package deliveries between Winnipeg and nearby towns. You see the payout before you accept, and you can skip any offer.</Text>}
+          {s.courierAccess !== "APPROVED" && (
+            <View style={styles.card}>
+              <Text style={styles.body}>
+                {s.courierAccess === "REQUESTED"
+                  ? "You've asked for Movo Courier access. The Movo team will review it and let you know."
+                  : "Movo Courier is same-day package delivery between Winnipeg and nearby towns. The Movo team approves drivers for it."}
+              </Text>
+              {s.courierAccess !== "REQUESTED" && (
+                <Pressable onPress={requestAccess} style={styles.requestBtn} accessibilityRole="button">
+                  <Text style={styles.requestText}>{s.courierAccess === "DECLINED" ? "Request again" : "Request access"}</Text>
+                </Pressable>
+              )}
+            </View>
+          )}
+          {s.courierAccess === "APPROVED" && !s.courierEnabled && <Text style={[styles.card, styles.body]}>Turn on Courier to get same-day package deliveries between Winnipeg and nearby towns. You see the payout before you accept, and you can skip any offer.</Text>}
           {s.scheduledBlocked && <Text style={styles.warn}>Scheduled offers are paused after {s.lateCancels} late cancels. Contact Movo to restore them.</Text>}
 
           {s.jobs.length > 0 && <Text style={styles.section}>YOUR DELIVERIES</Text>}
@@ -255,6 +273,8 @@ export default function Deliveries() {
 }
 
 const styles = StyleSheet.create({
+  requestBtn: { marginTop: 12, backgroundColor: colors.navy, borderRadius: 12, paddingVertical: 12, alignItems: "center" },
+  requestText: { fontFamily: fonts.bodySemi, fontSize: 14, color: "#fff" },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#fff" },
   h1: { fontFamily: fonts.heading, fontSize: 18, color: "#111827" },
   page: { padding: 16, gap: 12, paddingBottom: 40 },

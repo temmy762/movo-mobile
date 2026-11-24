@@ -154,6 +154,10 @@ export default function Profile() {
           <Row icon="bell" label="Notification sounds" onPress={() => router.push({ pathname: "/notifications", params: { tab: "settings" } })} />
         </Section>
 
+        <Section title="Services">
+          <Row icon="list" label="Safe Ride & Movo Courier" onPress={() => router.push("/services")} />
+        </Section>
+
         <Section title="Vehicle & payments">
           <Row icon="home" label="My vehicle" onPress={() => router.push("/vehicle")} />
           <Divider />

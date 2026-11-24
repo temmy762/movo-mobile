@@ -6,6 +6,15 @@ import { request } from "../client";
 
 export const onboardingStatus = () => request<OnboardingStatus>("/api/driver/onboarding/status");
 
+/* ── Services: Safe Ride / Movo Courier need the Movo team's approval ── */
+export type ServiceAccess = "NONE" | "REQUESTED" | "APPROVED" | "DECLINED";
+export type ServiceState = { access: ServiceAccess; enabled: boolean; requestedAt: string | null; available: boolean };
+/* kind COURIER = courier driver: Movo Courier only, no City Rides or Safe Rides */
+export type DriverServices = { kind: "CHAUFFEUR" | "COURIER"; safeRide: ServiceState; courier: ServiceState };
+export const services = () => request<DriverServices>("/api/driver/services");
+export const setService = (service: "SAFE_RIDE" | "COURIER", action: "request" | "on" | "off") =>
+  request<DriverServices>("/api/driver/services", { body: { service, action } });
+
 /* Refused (409) during an active ride or while earnings/payouts are pending */
 export const deleteAccount = () =>
   request<{ ok: true }>("/api/driver/profile", { method: "DELETE", body: { confirm: "DELETE" } });

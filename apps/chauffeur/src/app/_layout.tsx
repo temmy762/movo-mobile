@@ -92,6 +92,7 @@ export default function RootLayout() {
               <Stack.Screen name="chat/[bookingId]" />
               <Stack.Screen name="banking" />
               <Stack.Screen name="vehicle" />
+              <Stack.Screen name="services" />
               <Stack.Screen name="report-incident" />
               <Stack.Screen name="report-found-item" />
               <Stack.Screen name="notifications" />

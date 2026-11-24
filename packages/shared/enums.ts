@@ -92,6 +92,20 @@ export const RiskLevel = {
 } as const;
 export type RiskLevel = (typeof RiskLevel)[keyof typeof RiskLevel];
 
+export const DriverKind = {
+  CHAUFFEUR: "CHAUFFEUR",
+  COURIER: "COURIER",
+} as const;
+export type DriverKind = (typeof DriverKind)[keyof typeof DriverKind];
+
+export const ServiceAccess = {
+  NONE: "NONE",
+  REQUESTED: "REQUESTED",
+  APPROVED: "APPROVED",
+  DECLINED: "DECLINED",
+} as const;
+export type ServiceAccess = (typeof ServiceAccess)[keyof typeof ServiceAccess];
+
 export const OnboardingType = {
   INDIVIDUAL: "INDIVIDUAL",
   FLEET: "FLEET",
@@ -255,6 +269,7 @@ export const NotificationEventType = {
   ADMIN_SAFE_RIDE_BOOK_UBER: "ADMIN_SAFE_RIDE_BOOK_UBER",
   ADMIN_RESERVATION_NO_SHOW: "ADMIN_RESERVATION_NO_SHOW",
   ADMIN_RESERVATION_UNASSIGNED: "ADMIN_RESERVATION_UNASSIGNED",
+  ADMIN_SERVICE_ACCESS_REQUESTED: "ADMIN_SERVICE_ACCESS_REQUESTED",
   CHAUFFEUR_RESERVATION_REQUEST: "CHAUFFEUR_RESERVATION_REQUEST",
 } as const;
 export type NotificationEventType = (typeof NotificationEventType)[keyof typeof NotificationEventType];
