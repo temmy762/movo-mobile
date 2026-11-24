@@ -43,14 +43,14 @@ const PERSONAL_DOCS: { key: OnboardingDocType; label: string }[] = [
   { key: "WORK_ELIGIBILITY", label: "Proof of Work Eligibility" },
 ];
 const VEHICLE_DOCS: { key: OnboardingDocType; label: string }[] = [
-  { key: "VEHICLE_REGISTRATION", label: "Vehicle Registration" },
-  { key: "VEHICLE_INSURANCE", label: "Vehicle Insurance" },
+  { key: "VEHICLE_REGISTRATION", label: "Vehicle Registration and Insurance" },
+  { key: "VEHICLE_INSURANCE", label: "Certificate of Inspection" },
   { key: "VEHICLE_PHOTO", label: "Vehicle Photos (interior/exterior)" },
 ];
 const DOC_LABELS: Record<string, string> = {
   PROFILE_PHOTO: "Profile Photo", DRIVERS_LICENSE: "Driver's License", BACKGROUND_CHECK: "Criminal Record Check", CHILD_ABUSE_REGISTRY: "Child Abuse Registry",
-  DRIVERS_ABSTRACT: "Driver's Abstract", WORK_ELIGIBILITY: "Work Eligibility", VEHICLE_REGISTRATION: "Vehicle Registration",
-  VEHICLE_INSURANCE: "Vehicle Insurance", VEHICLE_PHOTO: "Vehicle Photos",
+  DRIVERS_ABSTRACT: "Driver's Abstract", WORK_ELIGIBILITY: "Work Eligibility", VEHICLE_REGISTRATION: "Vehicle Registration and Insurance",
+  VEHICLE_INSURANCE: "Certificate of Inspection", VEHICLE_PHOTO: "Vehicle Photos",
 };
 
 type DocState = { fileName: string; status: "uploading" | "uploaded" | "failed" };
@@ -345,7 +345,7 @@ export default function Onboarding() {
             <Text style={s.label}>What you&apos;ll complete</Text>
             {[
               ["01", "Personal Verification", "ID, license & background check"],
-              ["02", "Vehicle Verification", "Registration, insurance & photos"],
+              ["02", "Vehicle Verification", "Registration, insurance, inspection & photos"],
               ["03", "Standards & Training", "Movo service standards"],
               ["04", "Safety Procedures", "Emergency protocols & GPS consent"],
               ["05", "Agreements & Contract", "Terms, privacy & digital signature"],
