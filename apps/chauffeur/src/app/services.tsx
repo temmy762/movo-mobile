@@ -12,6 +12,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { driver as driverApi } from "@movo/api";
 import { Card, colors, fonts } from "@movo/ui";
 import { ScreenHeader } from "@/components/ScreenHeader";
+import { CourierAgreementForm } from "@/components/CourierAgreementForm";
 
 type Key = "SAFE_RIDE" | "COURIER";
 type ServiceState = driverApi.ServiceState;
@@ -30,9 +31,12 @@ const INFO: Record<Key, { title: string; desc: string; eligibility: string }> = 
   },
 };
 
-function ServiceCard({ k, st, busy, act }: { k: Key; st: ServiceState; busy: boolean; act: (k: Key, a: "request" | "on" | "off") => void }) {
+type Extra = { agreementName: string; insuranceConfirmed: true };
+function ServiceCard({ k, st, busy, act }: { k: Key; st: ServiceState; busy: boolean; act: (k: Key, a: "request" | "on" | "off", extra?: Extra) => void }) {
   const info = INFO[k];
   const approved = st.access === "APPROVED";
+  /* Courier: sign the Courier Driver Agreement with the request */
+  const [signing, setSigning] = useState(false);
   return (
     <Card style={{ gap: 6 }}>
       <View style={styles.between}>
@@ -48,8 +52,11 @@ function ServiceCard({ k, st, busy, act }: { k: Key; st: ServiceState; busy: boo
       {st.access === "NONE" && <Text style={styles.small}>{info.eligibility}</Text>}
       {st.access === "REQUESTED" && <Text style={styles.pending}>Requested — the Movo team will review it and let you know.</Text>}
       {st.access === "DECLINED" && <Text style={styles.small}>Your last request wasn&apos;t approved. You can ask again, or contact the Movo team.</Text>}
-      {(st.access === "NONE" || st.access === "DECLINED") && (
-        <Pressable disabled={busy} onPress={() => act(k, "request")} style={[styles.btn, busy && { opacity: 0.5 }]} accessibilityRole="button">
+      {(st.access === "NONE" || st.access === "DECLINED") && signing && (
+        <CourierAgreementForm busy={busy} onCancel={() => setSigning(false)} onSubmit={(v) => act(k, "request", v)} />
+      )}
+      {(st.access === "NONE" || st.access === "DECLINED") && !signing && (
+        <Pressable disabled={busy} onPress={() => (k === "COURIER" ? setSigning(true) : act(k, "request"))} style={[styles.btn, busy && { opacity: 0.5 }]} accessibilityRole="button">
           <Text style={styles.btnText}>{st.access === "DECLINED" ? "Request again" : "Request access"}</Text>
         </Pressable>
       )}
@@ -67,10 +74,10 @@ export default function Services() {
   const [busy, setBusy] = useState(false);
   const s = q.data;
 
-  const act = async (k: Key, a: "request" | "on" | "off") => {
+  const act = async (k: Key, a: "request" | "on" | "off", extra?: Extra) => {
     setBusy(true);
     try {
-      qc.setQueryData(["driver-services"], await driverApi.setService(k, a));
+      qc.setQueryData(["driver-services"], await driverApi.setService(k, a, extra));
       qc.invalidateQueries({ queryKey: ["courier-driver"] });
     } catch (e) {
       Alert.alert("Couldn't update", e instanceof Error ? e.message : "Please try again.");

@@ -8,7 +8,9 @@ export const get = () =>
 /* Saves progress (creates the record on first save). `submit: true` sends the
    application for review — Movo emails the chauffeur a confirmation. */
 export const save = (body: Partial<OnboardingFields> & Partial<OnboardingConsents> & {
-  type?: "INDIVIDUAL"; currentStep?: number; completedSteps?: number[]; vehicleOption?: "OWN" | "RENT"; submit?: boolean;
+  type?: "INDIVIDUAL" | "COURIER"; currentStep?: number; completedSteps?: number[]; vehicleOption?: "OWN" | "RENT"; submit?: boolean;
+  /* Movo Courier driver application */
+  vehicleType?: string; licenseClass?: string; licensedSince?: string; courierInsuranceConfirmed?: boolean; responsibilitiesAck?: boolean;
   /* Safe Ride matching: AUTOMATIC | MANUAL | BOTH */
   driveTransmission?: string;
 }) => request<{ success: true }>("/api/driver/onboarding", { method: "PATCH", body });

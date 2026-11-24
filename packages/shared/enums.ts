@@ -109,6 +109,7 @@ export type ServiceAccess = (typeof ServiceAccess)[keyof typeof ServiceAccess];
 export const OnboardingType = {
   INDIVIDUAL: "INDIVIDUAL",
   FLEET: "FLEET",
+  COURIER: "COURIER",
 } as const;
 export type OnboardingType = (typeof OnboardingType)[keyof typeof OnboardingType];
 

@@ -8,7 +8,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { driver as driverApi } from "@movo/api";
+import { driver as driverApi, onboarding as onboardingApi } from "@movo/api";
 import type { OnboardingStatus } from "@movo/shared";
 import { Button, Card, Icon, type IconName, colors, fontSizes, fonts, spacing } from "@movo/ui";
 import { useSession } from "@/lib/session";
@@ -28,6 +28,9 @@ function describe(status: OnboardingStatus | undefined, driverStatus: string | u
     case "REJECTED":
       return { icon: "alert", tone: colors.danger, title: "Application not approved", body: "Unfortunately your application wasn't approved this time.", note: status.adminNote };
     case "NOT_SUBMITTED":
+      if (status.type === "COURIER") {
+        return { icon: "list", tone: colors.navy, title: "Finish your application", body: "Your courier driver application isn't complete yet. Your progress is saved as you go.", finish: "app" };
+      }
       return status.type === "FLEET"
         ? { icon: "list", tone: colors.navy, title: "Finish your application", body: "Your fleet partner application isn't complete yet. Finish it on movoprive.com — log in there with the same email and password.", finish: "web" }
         : { icon: "list", tone: colors.navy, title: "Finish your application", body: "Your chauffeur application isn't complete yet — it takes about 15 minutes. Your progress is saved as you go.", finish: "app" };
@@ -44,12 +47,21 @@ export default function AccountStatus() {
 
   const view = describe(status.data, status.data?.driverStatus ?? driver?.status);
 
-  /* Straight from "Create account": open the application */
+  /* The courier driver application, or the chauffeur one */
+  const applicationRoute = status.data?.type === "COURIER" ? "/courier-application" : "/onboarding";
+
+  /* Straight from "Create account": open the application they chose */
   useEffect(() => {
     if (view.finish !== "app" || !useSession.getState().justRegistered) return;
+    const { applyAs } = useSession.getState();
     useSession.setState({ justRegistered: false });
-    router.push("/onboarding");
-  }, [view.finish]);
+    if (applyAs === "COURIER") {
+      onboardingApi.save({ type: "COURIER", currentStep: 1 }).catch(() => {}).finally(() => {
+        queryClient.invalidateQueries({ queryKey: ["onboarding-status"] });
+        router.push("/courier-application");
+      });
+    } else router.push("/onboarding");
+  }, [view.finish, queryClient]);
 
   /* Approval flips driver.status to ACTIVE; the root layout then opens the app */
   const checkAgain = async () => {
@@ -76,10 +88,10 @@ export default function AccountStatus() {
         </Card>
 
         <View style={{ gap: spacing.md, marginTop: spacing.xl }}>
-          {view.finish === "app" && <Button title="Continue application" onPress={() => router.push("/onboarding")} />}
+          {view.finish === "app" && <Button title="Continue application" onPress={() => router.push(applicationRoute)} />}
           {view.finish === "web" && <Button title="Continue on movoprive.com" onPress={() => openWeb("/driver/onboarding/login")} />}
           <Button title="Check again" variant={view.finish ? "secondary" : "primary"} onPress={checkAgain} loading={checking} />
-          <Button title="Contact support" variant="secondary" onPress={() => emailSupport("Chauffeur account")} />
+          <Button title="Contact support" variant="secondary" onPress={() => emailSupport("Driver account")} />
           <Button title="Sign out" variant="secondary" onPress={signOut} />
         </View>
       </ScrollView>

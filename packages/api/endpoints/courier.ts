@@ -66,7 +66,8 @@ export type CourierOutcome = NonNullable<CourierJob["outcome"]>;
 export const driverState = () => request<CourierDriverState>("/api/courier/driver");
 export const setEnabled = (courierEnabled: boolean) => request<CourierDriverState>("/api/courier/driver", { body: { courierEnabled } });
 /* Not approved yet: ask the Movo team for Courier access */
-export const requestAccess = () => request<CourierDriverState>("/api/courier/driver", { body: { request: true } });
+export const requestAccess = (v: { agreementName: string; insuranceConfirmed: true }) =>
+  request<CourierDriverState>("/api/courier/driver", { body: { request: true, ...v } });
 export const act = (id: string, action: "accept" | "en_route" | "arrived" | "door_link" | "check_payment" | "cancel") =>
   request<Record<string, unknown>>(`/api/courier/driver/${id}`, { body: { action } });
 

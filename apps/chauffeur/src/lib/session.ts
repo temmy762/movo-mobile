@@ -19,6 +19,8 @@ type SessionState = {
   driver: ApiDriver | null;
   /** Set by signUp so the application opens right after the account is created */
   justRegistered: boolean;
+  /** Chosen on "Join Movo": the chauffeur application or the courier driver one */
+  applyAs: "CHAUFFEUR" | "COURIER";
   restore: () => Promise<void>;
   /** Re-reads the chauffeur (status can change: approved, suspended, removed) */
   refresh: () => Promise<void>;
@@ -42,6 +44,7 @@ export const useSession = create<SessionState>((set, get) => ({
   token: null,
   driver: null,
   justRegistered: false,
+  applyAs: "CHAUFFEUR",
   pendingSignup: null,
 
   async restore() {

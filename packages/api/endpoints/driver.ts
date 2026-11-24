@@ -8,12 +8,13 @@ export const onboardingStatus = () => request<OnboardingStatus>("/api/driver/onb
 
 /* ── Services: Safe Ride / Movo Courier need the Movo team's approval ── */
 export type ServiceAccess = "NONE" | "REQUESTED" | "APPROVED" | "DECLINED";
-export type ServiceState = { access: ServiceAccess; enabled: boolean; requestedAt: string | null; available: boolean };
+export type ServiceState = { access: ServiceAccess; enabled: boolean; requestedAt: string | null; available: boolean; agreementSignedAt?: string | null };
 /* kind COURIER = courier driver: Movo Courier only, no City Rides or Safe Rides */
 export type DriverServices = { kind: "CHAUFFEUR" | "COURIER"; safeRide: ServiceState; courier: ServiceState };
 export const services = () => request<DriverServices>("/api/driver/services");
-export const setService = (service: "SAFE_RIDE" | "COURIER", action: "request" | "on" | "off") =>
-  request<DriverServices>("/api/driver/services", { body: { service, action } });
+/* Courier requests carry the signed Courier Driver Agreement: { agreementName, insuranceConfirmed: true } */
+export const setService = (service: "SAFE_RIDE" | "COURIER", action: "request" | "on" | "off", extra?: { agreementName: string; insuranceConfirmed: true }) =>
+  request<DriverServices>("/api/driver/services", { body: { service, action, ...extra } });
 
 /* Refused (409) during an active ride or while earnings/payouts are pending */
 export const deleteAccount = () =>

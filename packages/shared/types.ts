@@ -38,7 +38,7 @@ export type AppConfig = {
 export type OnboardingStatus = {
   adminStatus: "NOT_SUBMITTED" | "PENDING" | "UNDER_REVIEW" | "APPROVED" | "REJECTED" | string;
   adminNote?: string | null;
-  type?: "INDIVIDUAL" | "FLEET" | null;
+  type?: "INDIVIDUAL" | "FLEET" | "COURIER" | null;
   submittedAt?: string | null;
   reviewedAt?: string | null;
   driverId: string;
@@ -264,7 +264,10 @@ export type OnboardingConsents = {
 };
 
 export type OnboardingRecord = Partial<Record<keyof OnboardingFields, string | null>> & {
-  type?: "INDIVIDUAL" | "FLEET" | null;
+  type?: "INDIVIDUAL" | "FLEET" | "COURIER" | null;
+  /* Movo Courier driver application */
+  vehicleType?: string | null; licenseClass?: string | null; licensedSince?: string | null;
+  courierInsuranceConfirmedAt?: string | null; responsibilitiesAckAt?: string | null;
   currentStep?: number | null;
   vehicleOption?: "OWN" | "RENT" | null;
   submittedAt?: string | null;

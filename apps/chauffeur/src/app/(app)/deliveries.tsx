@@ -15,6 +15,7 @@ import { courier } from "@movo/api";
 import { SOCKET_EVENTS, pickupWhenLabel } from "@movo/shared";
 import { colors, fonts } from "@movo/ui";
 import { useSocket } from "@/lib/socket";
+import { CourierAgreementForm } from "@/components/CourierAgreementForm";
 
 type Offer = courier.CourierOffer;
 type Job = courier.CourierJob;
@@ -201,9 +202,13 @@ export default function Deliveries() {
     try { await courier.setEnabled(v); refetch(); }
     catch (e) { Alert.alert("Couldn't update", e instanceof Error ? e.message : "Please try again."); }
   };
-  const requestAccess = async () => {
-    try { await courier.requestAccess(); refetch(); }
+  const [signing, setSigning] = useState(false);
+  const [requesting, setRequesting] = useState(false);
+  const requestAccess = async (v: { agreementName: string; insuranceConfirmed: true }) => {
+    setRequesting(true);
+    try { await courier.requestAccess(v); setSigning(false); refetch(); }
     catch (e) { Alert.alert("Couldn't send your request", e instanceof Error ? e.message : "Please try again."); }
+    finally { setRequesting(false); }
   };
   const accept = async (o: Offer) => {
     setBusyId(o.id);
@@ -228,8 +233,11 @@ export default function Deliveries() {
                   ? "You've asked for Movo Courier access. The Movo team will review it and let you know."
                   : "Movo Courier is same-day package delivery between Winnipeg and nearby towns. The Movo team approves drivers for it."}
               </Text>
-              {s.courierAccess !== "REQUESTED" && (
-                <Pressable onPress={requestAccess} style={styles.requestBtn} accessibilityRole="button">
+              {s.courierAccess !== "REQUESTED" && signing && (
+                <CourierAgreementForm busy={requesting} onCancel={() => setSigning(false)} onSubmit={requestAccess} />
+              )}
+              {s.courierAccess !== "REQUESTED" && !signing && (
+                <Pressable onPress={() => setSigning(true)} style={styles.requestBtn} accessibilityRole="button">
                   <Text style={styles.requestText}>{s.courierAccess === "DECLINED" ? "Request again" : "Request access"}</Text>
                 </Pressable>
               )}

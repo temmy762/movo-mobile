@@ -20,6 +20,8 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function Register() {
   const signUp = useSession((s) => s.signUp);
+  /* Chauffeur (City Rides, Safe Ride) or Movo Courier driver application */
+  const applyAs = useSession((s) => s.applyAs);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -55,8 +57,23 @@ export default function Register() {
       <ScreenHeader title="Become a Chauffeur" subtitle="Winnipeg, Canada" fallback="/sign-in" />
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+          <Text style={styles.label}>I want to</Text>
+          <View style={styles.choice}>
+            {([
+              { v: "CHAUFFEUR", t: "Drive riders", d: "City Rides and Safe Ride" },
+              { v: "COURIER", t: "Deliver packages", d: "Movo Courier driver" },
+            ] as const).map((o) => (
+              <Pressable key={o.v} onPress={() => useSession.setState({ applyAs: o.v })} accessibilityRole="radio" accessibilityState={{ selected: applyAs === o.v }}
+                style={[styles.option, applyAs === o.v && styles.optionOn]}>
+                <Text style={styles.optionTitle}>{o.t}</Text>
+                <Text style={styles.optionSub}>{o.d}</Text>
+              </Pressable>
+            ))}
+          </View>
           <Text style={styles.intro}>
-            Create your account, then complete your application — documents, vehicle and agreement. It takes about 15 minutes.
+            {applyAs === "COURIER"
+              ? "Create your account, then complete your courier driver application — documents, vehicle and agreement. No courier experience needed."
+              : "Create your account, then complete your application — documents, vehicle and agreement. It takes about 15 minutes."}
           </Text>
 
           <View style={styles.nameRow}>
@@ -105,6 +122,12 @@ export default function Register() {
 const styles = StyleSheet.create({
   page: { padding: 24, gap: spacing.md, paddingBottom: 48 },
   intro: { fontFamily: fonts.body, fontSize: fontSizes.md, color: colors.muted, lineHeight: 19 },
+  label: { fontFamily: fonts.bodySemi, fontSize: fontSizes.sm, color: "#374151" },
+  choice: { flexDirection: "row", gap: spacing.md },
+  option: { flex: 1, borderWidth: 2, borderColor: "#f1f1ee", borderRadius: 14, padding: 12, backgroundColor: "#fff" },
+  optionOn: { borderColor: colors.navy },
+  optionTitle: { fontFamily: fonts.bodySemi, fontSize: 14, color: "#111827" },
+  optionSub: { fontFamily: fonts.body, fontSize: 11, color: colors.muted, marginTop: 2 },
   nameRow: { flexDirection: "row", gap: spacing.md },
   hint: { fontFamily: fonts.body, fontSize: 11, color: "#9ca3af", marginTop: -6 },
   error: { fontFamily: fonts.body, fontSize: fontSizes.sm, color: colors.danger, textAlign: "center" },

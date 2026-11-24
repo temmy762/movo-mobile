@@ -86,6 +86,7 @@ export default function RootLayout() {
             <Stack.Protected guard={signedIn && !active} redirectTo={signedIn ? "/" : "/sign-in"}>
               <Stack.Screen name="account-status" />
               <Stack.Screen name="onboarding" />
+              <Stack.Screen name="courier-application" />
             </Stack.Protected>
             <Stack.Protected guard={active} redirectTo={signedIn ? "/account-status" : "/sign-in"}>
               <Stack.Screen name="(app)" />
