@@ -11,8 +11,8 @@ import { UPDATE_SOUNDS, getUpdateSound, type SoundOption } from "@/lib/alertSoun
 import { enablePush, getPushStatus, sendTestNotification, setAlertSound, type PushStatus } from "@/lib/push";
 
 const STATUS_TEXT: Record<PushStatus, { label: string; hint: string }> = {
-  on: { label: "On", hint: "You'll be alerted when your chauffeur is assigned, on the way and arrived." },
-  off: { label: "Off", hint: "Turn them on so you know when your chauffeur is on the way and has arrived." },
+  on: { label: "On", hint: "You'll be alerted when your driver is assigned, on the way and arrived." },
+  off: { label: "Off", hint: "Turn them on so you know when your driver is on the way and has arrived." },
   blocked: { label: "Off", hint: "Notifications are turned off in your phone's settings for Movo Privé." },
   unavailable: { label: "Unavailable", hint: "Notifications aren't available on this device." },
 };

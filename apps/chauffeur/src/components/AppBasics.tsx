@@ -15,7 +15,7 @@ export const APP_BASICS: { key: string; title: string; items: string[] }[] = [
       "Set your status to Online to receive bookings.",
       "Incoming requests show pickup, destination, trip details, and your payout.",
       "You have 30 seconds to accept or decline a request.",
-      "Unaccepted requests move to another available chauffeur.",
+      "Unaccepted requests move to another available driver.",
       "Keep your availability updated.",
     ],
   },
@@ -44,7 +44,7 @@ export const APP_BASICS: { key: string; title: string; items: string[] }[] = [
     items: [
       "View your payout before accepting a booking.",
       "Payments are processed securely through Movo.",
-      "Tips belong to the chauffeur.",
+      "Tips belong to the driver.",
       "View completed trips and earnings in your dashboard.",
       "Payouts go to your connected bank account according to the payout schedule.",
     ],

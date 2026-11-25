@@ -21,7 +21,7 @@ type ServiceState = driverApi.ServiceState;
 const INFO: Record<Key, { title: string; desc: string; eligibility: string }> = {
   SAFE_RIDE: {
     title: "Safe Ride",
-    desc: "Drive customers home in their own car, with a support chauffeur following.",
+    desc: "Drive customers home in their own car, with a support driver following.",
     eligibility: "Approved by the Movo team. You must be comfortable driving customers' vehicles.",
   },
   COURIER: {

@@ -9,11 +9,11 @@ export const helpTopics: HelpTopic[] = [
     "sections": [
       {
         "heading": "City Rides — we bring the car",
-        "body": "A Movo chauffeur picks you up and takes you where you need to go in a comfortable Standard vehicle. You see the estimated total before you book."
+        "body": "A Movo driver picks you up and takes you where you need to go in a comfortable Standard vehicle. You see the estimated total before you book."
       },
       {
         "heading": "Safe Ride — we drive your car",
-        "body": "A professional Movo chauffeur meets you and drives you home in your own vehicle, so you and your car both get home safely. Ideal after an evening out, an event, or whenever you’d rather not drive but don’t want to leave your car behind."
+        "body": "A professional Movo driver meets you and drives you home in your own vehicle, so you and your car both get home safely. Ideal after an evening out, an event, or whenever you’d rather not drive but don’t want to leave your car behind."
       },
       {
         "heading": "Quick guide",
@@ -21,7 +21,7 @@ export const helpTopics: HelpTopic[] = [
       },
       {
         "heading": "What happens next",
-        "body": "Both start with your pickup and destination. City Rides then shows your Standard ride and fare. Safe Ride asks for your vehicle details instead. Either way you review your fare before you pay, and can follow your chauffeur live on the tracking screen."
+        "body": "Both start with your pickup and destination. City Rides then shows your Standard ride and fare. Safe Ride asks for your vehicle details instead. Either way you review your fare before you pay, and can follow your driver live on the tracking screen."
       }
     ]
   },
@@ -36,15 +36,15 @@ export const helpTopics: HelpTopic[] = [
       },
       {
         "heading": "Choose your service",
-        "body": "City Rides (Standard) — comfortable everyday rides. Safe Ride — a chauffeur drives you home in your own vehicle. Each shows an estimated total before you book."
+        "body": "City Rides (Standard) — comfortable everyday rides. Safe Ride — a driver drives you home in your own vehicle. Each shows an estimated total before you book."
       },
       {
         "heading": "Schedule for later",
-        "body": "Pick a future date and time when booking. Scheduled rides are lined up with a chauffeur ahead of your pickup, and you’ll be notified when your chauffeur sets off. You can view and manage upcoming rides from the Rides tab."
+        "body": "Pick a future date and time when booking. Scheduled rides are lined up with a driver ahead of your pickup, and you’ll be notified when your driver sets off. You can view and manage upcoming rides from the Rides tab."
       },
       {
         "heading": "Change your route during the trip",
-        "body": "On the tracking screen, open Actions to add a stop or change your destination. You’ll see the extra cost before anything is charged, and your chauffeur is updated instantly. On the Route tab you can drag your stops into a different order at no extra cost."
+        "body": "On the tracking screen, open Actions to add a stop or change your destination. You’ll see the extra cost before anything is charged, and your driver is updated instantly. On the Route tab you can drag your stops into a different order at no extra cost."
       }
     ]
   },
@@ -77,12 +77,12 @@ export const helpTopics: HelpTopic[] = [
     "description": "Live tracking, emergency help, and reporting issues",
     "sections": [
       {
-        "heading": "Vetted chauffeurs",
-        "body": "Every Movo chauffeur is background-checked, licensed, and insured before they’re activated on the platform. You’ll see your chauffeur’s name and vehicle details once they accept your ride."
+        "heading": "Vetted drivers",
+        "body": "Every Movo driver is background-checked, licensed, and insured before they’re activated on the platform. You’ll see your driver’s name and vehicle details once they accept your ride."
       },
       {
         "heading": "Live tracking",
-        "body": "Follow your chauffeur on the map in real time, from dispatch to arrival and throughout your trip. The vehicle marker shows their live position and direction of travel."
+        "body": "Follow your driver on the map in real time, from dispatch to arrival and throughout your trip. The vehicle marker shows their live position and direction of travel."
       },
       {
         "heading": "Emergency assistance",
@@ -90,7 +90,7 @@ export const helpTopics: HelpTopic[] = [
       },
       {
         "heading": "Report an issue",
-        "body": "After any completed ride you can Report an Issue — chauffeur or vehicle concerns, billing, safety, lost property, or general feedback — and attach photos if needed. Our team reviews every report."
+        "body": "After any completed ride you can Report an Issue — driver or vehicle concerns, billing, safety, lost property, or general feedback — and attach photos if needed. Our team reviews every report."
       }
     ]
   },
@@ -101,23 +101,23 @@ export const helpTopics: HelpTopic[] = [
     "sections": [
       {
         "heading": "Free cancellation",
-        "body": "You can cancel free of charge within 5 minutes of booking, or any time before a chauffeur has been assigned — you’ll receive a full refund. While we’re still finding you a chauffeur, cancelling is always free."
+        "body": "You can cancel free of charge within 5 minutes of booking, or any time before a driver has been assigned — you’ll receive a full refund. While we’re still finding you a driver, cancelling is always free."
       },
       {
-        "heading": "Cancelling after a chauffeur is assigned",
-        "body": "If you cancel more than 5 minutes after booking once a chauffeur has accepted, a partial charge may apply to compensate them for their time and travel."
+        "heading": "Cancelling after a driver is assigned",
+        "body": "If you cancel more than 5 minutes after booking once a driver has accepted, a partial charge may apply to compensate them for their time and travel."
       },
       {
         "heading": "Safe Ride cancellations",
-        "body": "Cancelling a Safe Ride before a chauffeur is assigned is free. Once a chauffeur is assigned, and before the trip starts, a $10.00 cancellation fee (including GST) applies and the rest of your payment is refunded."
+        "body": "Cancelling a Safe Ride before a driver is assigned is free. Once a driver is assigned, and before the trip starts, a $10.00 cancellation fee (including GST) applies and the rest of your payment is refunded."
       },
       {
         "heading": "No-shows",
-        "body": "If your chauffeur arrives and can't find or reach you after the free waiting time, they can mark the ride as a no-show. The ride is cancelled, a $5.00 no-show fee (including GST) applies, and the rest of your payment is refunded."
+        "body": "If your driver arrives and can't find or reach you after the free waiting time, they can mark the ride as a no-show. The ride is cancelled, a $5.00 no-show fee (including GST) applies, and the rest of your payment is refunded."
       },
       {
-        "heading": "If a chauffeur cancels or none is found",
-        "body": "You’re never charged when a chauffeur cancels after accepting, or if we can’t find one for you — Movo automatically finds another chauffeur or issues a full refund, and lets you know."
+        "heading": "If a driver cancels or none is found",
+        "body": "You’re never charged when a driver cancels after accepting, or if we can’t find one for you — Movo automatically finds another driver or issues a full refund, and lets you know."
       },
       {
         "heading": "Refund timing",
@@ -132,7 +132,7 @@ export const helpTopics: HelpTopic[] = [
     "sections": [
       {
         "heading": "Manage your profile",
-        "body": "Update your name, phone number, and personal details from Profile → Personal Info. Keeping your contact details current helps your chauffeur reach you."
+        "body": "Update your name, phone number, and personal details from Profile → Personal Info. Keeping your contact details current helps your driver reach you."
       },
       {
         "heading": "Saved payment methods",
@@ -151,11 +151,11 @@ export const helpTopics: HelpTopic[] = [
   {
     "id": "safe-ride",
     "title": "Safe Ride",
-    "description": "Our chauffeur service that drives you home in your own car",
+    "description": "Our driver service that drives you home in your own car",
     "sections": [
       {
         "heading": "What is Safe Ride?",
-        "body": "A professional Movo chauffeur meets you and drives you home in your own vehicle, so you and your car both get home safely. We take care of getting your chauffeur back afterwards."
+        "body": "A professional Movo driver meets you and drives you home in your own vehicle, so you and your car both get home safely. We take care of getting your driver back afterwards."
       },
       {
         "heading": "When to use it",
@@ -163,7 +163,7 @@ export const helpTopics: HelpTopic[] = [
       },
       {
         "heading": "Booking & pricing",
-        "body": "Choose Safe Ride when booking. Safe Ride has its own pricing, shown as an estimate before you confirm. Your chauffeur’s status and live location are shown on your tracking screen."
+        "body": "Choose Safe Ride when booking. Safe Ride has its own pricing, shown as an estimate before you confirm. Your driver’s status and live location are shown on your tracking screen."
       }
     ]
   }
@@ -184,14 +184,14 @@ export const faqs: { question: string; answer: string }[] = [
   },
   {
     "question": "How do I cancel a ride, and will I be refunded?",
-    "answer": "Cancelling within 5 minutes or before a chauffeur is assigned is free with a full refund. After that a partial charge may apply. If a chauffeur cancels or none is found, you’re fully refunded automatically."
+    "answer": "Cancelling within 5 minutes or before a driver is assigned is free with a full refund. After that a partial charge may apply. If a driver cancels or none is found, you’re fully refunded automatically."
   },
   {
-    "question": "How can I contact my chauffeur?",
-    "answer": "Once your ride is confirmed you can call or message your chauffeur directly from the ride tracking screen."
+    "question": "How can I contact my driver?",
+    "answer": "Once your ride is confirmed you can call or message your driver directly from the ride tracking screen."
   },
   {
     "question": "What is Safe Ride?",
-    "answer": "A professional Movo chauffeur meets you and drives you home in your own vehicle, so you and your car both get home safely. We take care of getting your chauffeur back afterwards."
+    "answer": "A professional Movo driver meets you and drives you home in your own vehicle, so you and your car both get home safely. We take care of getting your driver back afterwards."
   }
 ];

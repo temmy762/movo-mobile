@@ -24,9 +24,9 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 /* First-launch welcome — shown once, before the first sign-in */
 const WELCOME_KEY = "movo_welcome_v1";
 const WELCOME_CARDS: WelcomeCard[] = [
-  { art: "car", kicker: "City Rides", title: "A chauffeur comes to you", body: "Book a ride across Winnipeg in a comfortable Standard vehicle. You see the total before you confirm." },
-  { art: "key", kicker: "Safe Ride", title: "We drive you and your car home", body: "After a night out, a Movo chauffeur drives you home in your own vehicle, so you and your car both get back safely." },
-  { art: "shield", kicker: "Safety", title: "Vetted chauffeurs, every ride", body: "Background-checked chauffeurs, live tracking you can share, and an SOS button on every trip." },
+  { art: "car", kicker: "City Rides", title: "A driver comes to you", body: "Book a ride across Winnipeg in a comfortable Standard vehicle. You see the total before you confirm." },
+  { art: "key", kicker: "Safe Ride", title: "We drive you and your car home", body: "After a night out, a Movo driver drives you home in your own vehicle, so you and your car both get back safely." },
+  { art: "shield", kicker: "Safety", title: "Vetted drivers, every ride", body: "Background-checked drivers, live tracking you can share, and an SOS button on every trip." },
 ];
 
 export default function RootLayout() {
@@ -114,7 +114,7 @@ export default function RootLayout() {
       {!introDone && (
         <>
           <StatusBar style="light" />
-          <ArrivalIntro tagline="Your chauffeur, arriving." ready={ready && welcomeSeen !== null} onDone={() => setIntroDone(true)} />
+          <ArrivalIntro tagline="Your driver, arriving." ready={ready && welcomeSeen !== null} onDone={() => setIntroDone(true)} />
         </>
       )}
     </View>

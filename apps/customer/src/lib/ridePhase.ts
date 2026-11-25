@@ -27,21 +27,21 @@ export const canCancel = (p: RidePhase) => ["searching", "reserved", "assigned",
 
 export function headline(r: RideDetail, p: RidePhase): { title: string; body: string } {
   const care = r.bookingType === "CARE";
-  const name = r.driver?.firstName ?? "Your chauffeur";
+  const name = r.driver?.firstName ?? "Your driver";
   const when = r.scheduledAt ? pickupLabel(r.scheduledAt) : "";
   switch (p) {
     case "searching":
       return care
-        ? { title: "Assigning your Safe Ride chauffeur", body: "We're matching you with an available chauffeur. You'll be notified as soon as one accepts." }
-        : { title: "Finding your chauffeur", body: "We're matching you with the best available chauffeur nearby." };
+        ? { title: "Assigning your Safe Ride driver", body: "We're matching you with an available driver. You'll be notified as soon as one accepts." }
+        : { title: "Finding your driver", body: "We're matching you with the best available driver nearby." };
     case "reserved":
-      return { title: "Ride reserved", body: `Pickup ${when}. We'll assign your chauffeur and let you know when they're on the way.` };
+      return { title: "Ride reserved", body: `Pickup ${when}. We'll assign your driver and let you know when they're on the way.` };
     case "assigned":
-      return { title: "Chauffeur assigned", body: `${name} will pick you up ${when}. You'll be notified when they set off.` };
+      return { title: "Driver assigned", body: `${name} will pick you up ${when}. You'll be notified when they set off.` };
     case "on_the_way":
-      return { title: `${name} is on the way`, body: "Your chauffeur is heading to your pickup." };
+      return { title: `${name} is on the way`, body: "Your driver is heading to your pickup." };
     case "arrived":
-      return { title: `${name} has arrived`, body: "Your chauffeur is waiting at the pickup." };
+      return { title: `${name} has arrived`, body: "Your driver is waiting at the pickup." };
     case "in_progress":
       return care
         ? { title: "On your way", body: `${name} is driving you to your destination in your vehicle.` }
@@ -49,12 +49,12 @@ export function headline(r: RideDetail, p: RidePhase): { title: string; body: st
     case "completed":
       return { title: "Trip complete", body: "Thank you for riding with Movo." };
     case "no_driver":
-      return { title: "No chauffeur found", body: "We couldn't find an available chauffeur in time, so your ride was cancelled and fully refunded." };
+      return { title: "No driver found", body: "We couldn't find an available driver in time, so your ride was cancelled and fully refunded." };
     default:
       return {
         title: r.cancelledBy === "no_show" ? "Ride cancelled — no-show" : "Ride cancelled",
         body: r.cancelledBy === "admin" ? "This ride was cancelled by Movo support."
-          : r.cancelledBy === "no_show" ? "Your chauffeur waited at the pickup and couldn't find you, so the ride was cancelled as a no-show. A $5.00 no-show fee (incl. GST) applies; the rest of your payment is refunded."
+          : r.cancelledBy === "no_show" ? "Your driver waited at the pickup and couldn't find you, so the ride was cancelled as a no-show. A $5.00 no-show fee (incl. GST) applies; the rest of your payment is refunded."
           : "This ride has been cancelled.",
       };
   }
@@ -63,9 +63,9 @@ export function headline(r: RideDetail, p: RidePhase): { title: string; body: st
 /* Cancellation policy wording (mirrors app/api/bookings/[id]/status) */
 export function cancelPolicy(r: RideDetail, p: RidePhase): string {
   const withinFree = Date.now() - new Date(r.createdAt).getTime() < 5 * 60_000;
-  if (!r.driver || p === "searching" || p === "reserved") return "No chauffeur has confirmed yet, so you'll receive a full refund.";
+  if (!r.driver || p === "searching" || p === "reserved") return "No driver has confirmed yet, so you'll receive a full refund.";
   /* Safe Ride: $10.00 fee once a chauffeur is assigned — no 5-minute grace */
-  if (r.bookingType === "CARE") return "Your chauffeur is already assigned, so a $10.00 Safe Ride cancellation fee (incl. GST) applies. The rest of your payment is refunded.";
+  if (r.bookingType === "CARE") return "Your driver is already assigned, so a $10.00 Safe Ride cancellation fee (incl. GST) applies. The rest of your payment is refunded.";
   if (withinFree) return "You're within 5 minutes of booking, so you'll receive a full refund.";
-  return "Your chauffeur is already on the way, so 50% of your fare will be refunded.";
+  return "Your driver is already on the way, so 50% of your fare will be refunded.";
 }

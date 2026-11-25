@@ -101,7 +101,7 @@ export function TripCard({ booking, onFinished, onProgress }: {
       )}
 
       <HandBackModal visible={showCancel} title="Cancel this ride?" keepLabel="Keep Ride"
-        body="We'll automatically find another available chauffeur nearby — the rider will be told we're arranging this, not that their ride was cancelled."
+        body="We'll automatically find another available driver nearby — the rider will be told we're arranging this, not that their ride was cancelled."
         placeholder="Reason (optional) — e.g. vehicle issue, running too late"
         busy={trip.busy} error={showCancel ? trip.error : null}
         onKeep={() => { setShowCancel(false); trip.clearError(); }}

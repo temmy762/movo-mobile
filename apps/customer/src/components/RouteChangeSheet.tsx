@@ -71,7 +71,7 @@ export function RouteChangeSheet({ bookingId, kind, currentDropoff, onClose, onD
           <Text style={styles.title}>{dest ? "Change Destination" : "Add a Stop"}</Text>
           <Text style={styles.body}>
             {dest
-              ? "Enter the new drop-off to see the updated fare. Nothing is charged until you confirm, and your chauffeur is told right away."
+              ? "Enter the new drop-off to see the updated fare. Nothing is charged until you confirm, and your driver is told right away."
               : "Enter the stop to see the updated fare. Nothing is charged until you confirm."}
           </Text>
 

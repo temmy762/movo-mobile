@@ -142,7 +142,7 @@ export function CityRideBooking({ initialDropoff }: { initialDropoff?: string })
   if (booked) {
     return (
       <BookingDone bookingId={booked.id} title={booked.scheduledAt ? "Ride reserved" : "Ride booked"} bookingNumber={booked.bookingNumber}
-        scheduledAt={booked.scheduledAt} nowText="We're finding your chauffeur now. You'll get an update as soon as one accepts." />
+        scheduledAt={booked.scheduledAt} nowText="We're finding your driver now. You'll get an update as soon as one accepts." />
     );
   }
 
@@ -198,7 +198,7 @@ export function CityRideBooking({ initialDropoff }: { initialDropoff?: string })
             </View>
           )}
           <Text style={styles.muted}>
-            For the best experience and guaranteed chauffeur assignment, we recommend reserving your trip at least 30 minutes in advance.
+            For the best experience and guaranteed driver assignment, we recommend reserving your trip at least 30 minutes in advance.
           </Text>
 
           <View style={styles.otherRow}>
@@ -210,7 +210,7 @@ export function CityRideBooking({ initialDropoff }: { initialDropoff?: string })
               <TextInput value={riderName} onChangeText={setRiderName} placeholder="Rider's name" placeholderTextColor="#9ca3af" style={styles.input} />
               <TextInput value={riderPhone} onChangeText={setRiderPhone} placeholder="Rider's mobile number" placeholderTextColor="#9ca3af"
                 keyboardType="phone-pad" style={styles.input} />
-              <Text style={styles.muted}>Your chauffeur will contact the rider directly. The confirmation and receipt are sent to you.</Text>
+              <Text style={styles.muted}>Your driver will contact the rider directly. The confirmation and receipt are sent to you.</Text>
             </View>
           )}
 

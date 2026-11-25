@@ -195,7 +195,7 @@ export default function Ride() {
         {pickupPt && <Marker coordinate={pickupPt} title="Pickup" pinColor={colors.navy} />}
         {dropoffPt && <Marker coordinate={dropoffPt} title="Destination" pinColor="#ef4444" />}
         {driverPt && (
-          <Marker coordinate={driverPt} title={d ? `${d.firstName} (your chauffeur)` : "Your chauffeur"} anchor={{ x: 0.5, y: 0.5 }}>
+          <Marker coordinate={driverPt} title={d ? `${d.firstName} (your driver)` : "Your driver"} anchor={{ x: 0.5, y: 0.5 }}>
             <View style={styles.car}><View style={styles.carDot} /></View>
           </Marker>
         )}
@@ -215,7 +215,7 @@ export default function Ride() {
         <Text style={styles.title}>{h.title}</Text>
         <Text style={styles.body}>{h.body}</Text>
         {sharing && locationShared && (
-          <Text style={styles.small}>Your chauffeur can see your location until pickup, to help them find you.</Text>
+          <Text style={styles.small}>Your driver can see your location until pickup, to help them find you.</Text>
         )}
 
         {d && live && (
@@ -236,13 +236,13 @@ export default function Ride() {
               )}
             </View>
             {d.phone && (
-              <Pressable onPress={() => Linking.openURL(`tel:${d.phone}`)} style={styles.round} accessibilityRole="button" accessibilityLabel="Call your chauffeur">
+              <Pressable onPress={() => Linking.openURL(`tel:${d.phone}`)} style={styles.round} accessibilityRole="button" accessibilityLabel="Call your driver">
                 <Icon name="phone" size={17} color={colors.navy} />
               </Pressable>
             )}
             <Pressable onPress={() => router.push({ pathname: "/ride/chat/[id]", params: { id, number: r.bookingNumber ?? "" } })}
               style={styles.round} accessibilityRole="button"
-              accessibilityLabel={unread > 0 ? `Message your chauffeur, ${unread} unread` : "Message your chauffeur"}>
+              accessibilityLabel={unread > 0 ? `Message your driver, ${unread} unread` : "Message your driver"}>
               <Icon name="message" size={17} color={colors.navy} />
               <CountBadge count={unread} />
             </Pressable>
@@ -334,8 +334,8 @@ export default function Ride() {
           onClose={() => setRouteSheet(null)}
           onDone={(charged) => {
             setRouteNotice(charged > 0
-              ? `✓ ${money(charged)} charged. Your chauffeur has been told about the new route.`
-              : "✓ Route updated. Your chauffeur has been told.");
+              ? `✓ ${money(charged)} charged. Your driver has been told about the new route.`
+              : "✓ Route updated. Your driver has been told.");
             setRouteSheet(null);
             queryClient.invalidateQueries({ queryKey: ["ride", id] });
           }} />

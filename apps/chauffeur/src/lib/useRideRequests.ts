@@ -156,7 +156,7 @@ export function useRideRequests({ online, onAccepted }: {
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (e) {
-      if (e instanceof ApiError && e.status === 409) setNotice("Another chauffeur accepted this ride first.");
+      if (e instanceof ApiError && e.status === 409) setNotice("Another driver accepted this ride first.");
       else setNotice(e instanceof ApiError ? e.message : "Couldn't accept the ride. Please try again.");
       backToSearching();
     } finally {

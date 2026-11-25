@@ -333,9 +333,9 @@ export default function Onboarding() {
         return (
           <>
             <LinearGradient colors={["#1a1a2e", "#131936", "#C6BFB2"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
-              <Text style={s.heroKicker}>CHAUFFEUR ONBOARDING</Text>
-              <Text style={s.heroTitle}>Welcome to Movo,{"\n"}<Text style={{ color: colors.taupe }}>{driver?.firstName ?? "Chauffeur"}</Text></Text>
-              <Text style={s.heroBody}>You&apos;re just 9 steps away from joining our elite chauffeur network. This process takes approximately 15 minutes.</Text>
+              <Text style={s.heroKicker}>DRIVER ONBOARDING</Text>
+              <Text style={s.heroTitle}>Welcome to Movo,{"\n"}<Text style={{ color: colors.taupe }}>{driver?.firstName ?? "Driver"}</Text></Text>
+              <Text style={s.heroBody}>You&apos;re just 9 steps away from joining our elite driver network. This process takes approximately 15 minutes.</Text>
               <View style={s.heroStats}>
                 {[["9", "Steps"], ["15min", "Avg. time"], ["24h", "Review"]].map(([v, l]) => (
                   <View key={l} style={s.heroStat}><Text style={s.heroStatVal}>{v}</Text><Text style={s.heroStatLbl}>{l}</Text></View>
@@ -419,7 +419,7 @@ export default function Onboarding() {
               </>
             )}
             {vehicleOption === "RENT" && (
-              <Text style={s.sub}>You&apos;ll be able to browse and rent an available Movo vehicle from your chauffeur dashboard once your application is approved.</Text>
+              <Text style={s.sub}>You&apos;ll be able to browse and rent an available Movo vehicle from your driver dashboard once your application is approved.</Text>
             )}
             <Nav onBack={back} next={() => next({ vehicleOption, driveTransmission })} busy={saving}
               disabled={!vehicleOption || !driveTransmission || (vehicleOption === "OWN" && (
@@ -432,10 +432,10 @@ export default function Onboarding() {
       case 4:
         return (
           <>
-            <Title title="Chauffeur Standards" sub="Please read and acknowledge our service standards before proceeding." />
+            <Title title="Driver Standards" sub="Please read and acknowledge our service standards before proceeding." />
             <ChauffeurStandards />
             <Check checked={standards} onChange={setStandards}>
-              I have read and understood the Movo Chauffeur Standards & Expectations. I commit to upholding these standards on every trip.
+              I have read and understood the Movo Driver Standards & Expectations. I commit to upholding these standards on every trip.
             </Check>
             <Nav onBack={back} next={() => next()} nextLabel="Accept & Continue" disabled={!standards} busy={saving} />
           </>
@@ -450,7 +450,7 @@ export default function Onboarding() {
       case 6:
         return (
           <>
-            <Title title="Chauffeur App Basics" sub="Learn how to use the Movo Chauffeur App before accepting bookings." />
+            <Title title="Driver App Basics" sub="Learn how to use the Movo Driver App before accepting bookings." />
             <AppBasics reviewed={appBasicsReviewed} onReviewed={markReviewed} />
             {!allAppBasicsReviewed(appBasicsReviewed) && (
               <Text style={[s.sub, { textAlign: "center", fontSize: 12 }]}>Open all six sections to continue.</Text>
@@ -498,10 +498,10 @@ export default function Onboarding() {
             <Consent title="Privacy Policy Acknowledgement" description="Movo collects and processes personal data in accordance with applicable privacy laws. Your data is used solely for operational, safety, and payment purposes." />
             <Check checked={consents.privacyPolicy} onChange={(v) => setConsent("privacyPolicy", v)}>I have read and accept the Movo Privacy Policy.</Check>
             <Text style={s.link} onPress={() => openWeb("/privacy-policy")}>Read the Privacy Policy</Text>
-            <Consent title="Legal Notice Acknowledgement" description="You are registering as an independent chauffeur. Movo is a technology platform and does not constitute an employment relationship." />
+            <Consent title="Legal Notice Acknowledgement" description="You are registering as an independent driver. Movo is a technology platform and does not constitute an employment relationship." />
             <Check checked={consents.legalNotice} onChange={(v) => setConsent("legalNotice", v)}>I acknowledge the legal notice regarding my status as an independent contractor.</Check>
-            <Consent title="Terms & Conditions" description="By joining Movo, you agree to abide by our Chauffeur Terms & Conditions including the code of conduct, payment terms, and cancellation policy." />
-            <Check checked={consents.termsAccepted} onChange={(v) => setConsent("termsAccepted", v)}>I accept the Movo Chauffeur Terms & Conditions.</Check>
+            <Consent title="Terms & Conditions" description="By joining Movo, you agree to abide by our Driver Terms & Conditions including the code of conduct, payment terms, and cancellation policy." />
+            <Check checked={consents.termsAccepted} onChange={(v) => setConsent("termsAccepted", v)}>I accept the Movo Driver Terms & Conditions.</Check>
             <Text style={s.link} onPress={() => openWeb("/terms")}>Read the Terms & Conditions</Text>
             <Nav onBack={back} busy={saving}
               next={() => next({ gpsConsent: consents.gpsConsent, privacyPolicy: consents.privacyPolicy, legalNotice: consents.legalNotice, termsAccepted: consents.termsAccepted })}
@@ -512,16 +512,16 @@ export default function Onboarding() {
       case 9:
         return (
           <>
-            <Title title="Chauffeur Agreement" sub="Read the full agreement and sign with your legal name." />
+            <Title title="Driver Agreement" sub="Read the full agreement and sign with your legal name." />
             <View style={s.info}>
-              <Text style={s.infoTitle}>Chauffeur Services Agreement</Text>
-              <Text style={s.sub}>Movo · Independent Chauffeur</Text>
+              <Text style={s.infoTitle}>Driver Services Agreement</Text>
+              <Text style={s.sub}>Movo · Independent Driver</Text>
               <Text style={s.infoText}>
-                This Agreement is entered into between <Text style={s.b}>Movo</Text> (&quot;Platform&quot;) and the individual chauffeur (&quot;Chauffeur&quot;) registering through this onboarding process.{"\n\n"}
-                <Text style={s.b}>1. Independent Contractor Status.</Text> The Chauffeur operates as an independent contractor. Nothing in this Agreement creates an employer-employee relationship, partnership, or agency.{"\n\n"}
-                <Text style={s.b}>2. Service Standards.</Text> Chauffeur agrees to uphold all Movo service standards including appearance, punctuality, vehicle maintenance, and client interaction protocols.{"\n\n"}
-                <Text style={s.b}>3. GPS & Data Consent.</Text> Chauffeur consents to real-time GPS tracking during active trips. Location data is retained for 90 days for safety and dispute resolution purposes.{"\n\n"}
-                <Text style={s.b}>4. Payments.</Text> Movo will remit earnings to the Chauffeur&apos;s registered bank account on a weekly basis after applicable platform fees are deducted.{"\n\n"}
+                This Agreement is entered into between <Text style={s.b}>Movo</Text> (&quot;Platform&quot;) and the individual driver (&quot;Driver&quot;) registering through this onboarding process.{"\n\n"}
+                <Text style={s.b}>1. Independent Contractor Status.</Text> The Driver operates as an independent contractor. Nothing in this Agreement creates an employer-employee relationship, partnership, or agency.{"\n\n"}
+                <Text style={s.b}>2. Service Standards.</Text> Driver agrees to uphold all Movo service standards including appearance, punctuality, vehicle maintenance, and client interaction protocols.{"\n\n"}
+                <Text style={s.b}>3. GPS & Data Consent.</Text> Driver consents to real-time GPS tracking during active trips. Location data is retained for 90 days for safety and dispute resolution purposes.{"\n\n"}
+                <Text style={s.b}>4. Payments.</Text> Movo will remit earnings to the Driver&apos;s registered bank account on a weekly basis after applicable platform fees are deducted.{"\n\n"}
                 <Text style={s.b}>5. Conduct.</Text> Harassment, discrimination, or unsafe driving will result in immediate suspension and potential legal action.{"\n\n"}
                 <Text style={s.b}>6. Termination.</Text> Either party may terminate this agreement with 14 days written notice. Movo reserves the right to immediately suspend accounts for policy violations.{"\n\n"}
                 <Text style={s.b}>7. Governing Law.</Text> This agreement is governed by the laws of the applicable jurisdiction.
@@ -538,7 +538,7 @@ export default function Onboarding() {
             <Box value={form.signature} onChangeText={(v) => setField("signature", v)} placeholder="Your full legal name"
               style={{ fontFamily: Platform.OS === "ios" ? "Georgia" : "serif", fontStyle: "italic", fontSize: 18 }} />
             <Check checked={consents.contractSigned} onChange={(v) => setConsent("contractSigned", v)}>
-              By typing my name above, I confirm I have read, understood, and agree to the Movo Chauffeur Agreement in its entirety.
+              By typing my name above, I confirm I have read, understood, and agree to the Movo Driver Agreement in its entirety.
             </Check>
             <Nav onBack={back} next={() => next({ contractSigned: true })} nextLabel="Continue to review →" busy={saving}
               disabled={!form.signature.trim() || !consents.contractSigned || !form.bankAccountName.trim() || !form.bankInstitution.trim() || !form.bankAccountNumber.trim()} />
@@ -551,7 +551,7 @@ export default function Onboarding() {
             <View style={{ gap: 14, alignItems: "center", paddingTop: 24 }}>
               <LinearGradient colors={["#131936", "#C6BFB2"]} style={s.doneBadge}><Icon name="check" size={30} color="#fff" strokeWidth={2.5} /></LinearGradient>
               <Text style={s.title}>Application Submitted!</Text>
-              <Text style={[s.sub, { textAlign: "center" }]}>Your Movo chauffeur application is under review. Our team will contact you within 24–48 hours.</Text>
+              <Text style={[s.sub, { textAlign: "center" }]}>Your Movo driver application is under review. Our team will contact you within 24–48 hours.</Text>
               <View style={[s.info, { alignSelf: "stretch" }]}>
                 <Text style={s.infoTitle}>What happens next?</Text>
                 {["Our team will review your documents", "A background verification will be initiated", "You'll receive an email confirmation within 24h", "Account activation follows approval"].map((t) => (
@@ -570,7 +570,7 @@ export default function Onboarding() {
           { label: "Personal information", ok: DOB.test(form.dob) && !!form.licenseNumber, back: 2 },
           { label: "Vehicle information", ok: vehicleOption === "RENT" || (!!form.vehicleMake && !!form.vehiclePlate && Number(form.vehicleYear) >= MIN_VEHICLE_YEAR), back: 3 },
           { label: "Documents uploaded", ok: count === docTypes.length, note: `${count}/${docTypes.length}`, back: uploaded("PROFILE_PHOTO") ? 3 : 2 },
-          { label: "Chauffeur standards acknowledged", ok: standards, back: 4 },
+          { label: "Driver standards acknowledged", ok: standards, back: 4 },
           { label: "Standards assessment passed", ok: assessmentPassed, back: 5 },
           { label: "App basics reviewed", ok: allAppBasicsReviewed(appBasicsReviewed), back: 6 },
           { label: "Safety procedures reviewed", ok: safetyReview, back: 7 },

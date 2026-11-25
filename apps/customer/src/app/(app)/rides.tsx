@@ -24,7 +24,7 @@ const EMPTY: Record<Tab, { title: string; desc: string }> = {
   canceled: { title: "No canceled rides", desc: "Rides that have been canceled will be shown here." },
 };
 const STATUS: Record<string, string> = {
-  PENDING: "Finding your chauffeur",
+  PENDING: "Finding your driver",
   CONFIRMED: "Confirmed",
   COMPLETED: "Completed",
   CANCELLED: "Canceled",

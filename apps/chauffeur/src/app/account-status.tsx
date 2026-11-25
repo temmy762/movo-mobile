@@ -22,7 +22,7 @@ type StatusView = {
 
 function describe(status: OnboardingStatus | undefined, driverStatus: string | undefined): StatusView {
   if (driverStatus === "SUSPENDED") {
-    return { icon: "alert", tone: colors.danger, title: "Account on hold", body: "Your chauffeur account is currently suspended. Please contact Movo support to resolve this." };
+    return { icon: "alert", tone: colors.danger, title: "Account on hold", body: "Your driver account is currently suspended. Please contact Movo support to resolve this." };
   }
   switch (status?.adminStatus) {
     case "REJECTED":
@@ -33,7 +33,7 @@ function describe(status: OnboardingStatus | undefined, driverStatus: string | u
       }
       return status.type === "FLEET"
         ? { icon: "list", tone: colors.navy, title: "Finish your application", body: "Your fleet partner application isn't complete yet. Finish it on movoprive.com — log in there with the same email and password.", finish: "web" }
-        : { icon: "list", tone: colors.navy, title: "Finish your application", body: "Your chauffeur application isn't complete yet — it takes about 15 minutes. Your progress is saved as you go.", finish: "app" };
+        : { icon: "list", tone: colors.navy, title: "Finish your application", body: "Your driver application isn't complete yet — it takes about 15 minutes. Your progress is saved as you go.", finish: "app" };
     default:
       return { icon: "clock", tone: colors.navy, title: "Application under review", body: "Thanks for applying. Our team is reviewing your documents — we'll email you as soon as you're approved. This usually takes 1–2 business days." };
   }

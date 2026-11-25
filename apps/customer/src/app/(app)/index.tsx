@@ -21,7 +21,7 @@ const SERVICES: Service[] = [
   ...(IN_CITY_RIDES_ENABLED
     ? [{ id: "city" as const, title: "City Rides", desc: "Rides for everyday trips", cta: "Book a ride", img: require("../../../assets/images/standard.png") }]
     : []),
-  { id: "care", title: "Safe Ride", desc: "A chauffeur drives you in your own car.", cta: "Book a chauffeur", img: require("../../../assets/images/safe-ride.png") },
+  { id: "care", title: "Safe Ride", desc: "A driver drives you in your own car.", cta: "Book a driver", img: require("../../../assets/images/safe-ride.png") },
   /* The apps aren't in the stores yet, so testers see Courier before its
      public launch (the website shows it from COURIER_PUBLIC_FROM) */
   { id: "courier", title: "Movo Courier", desc: "Same-day packages to and from nearby towns.", cta: "Send a package", img: require("../../../assets/images/courier.svg") },
@@ -35,9 +35,9 @@ const book = (service: Service["id"]) =>
 const helpChoosing = () =>
   Alert.alert(
     "City Rides or Safe Ride?",
-    "City Rides — a Movo chauffeur picks you up in a Movo vehicle and takes you where you need to go.\n\n" +
-      "Safe Ride — a Movo chauffeur drives you home in your own vehicle, so you and your car both get home safely. " +
-      "We take care of getting your chauffeur back afterwards.\n\nEither way you see your fare before you pay.",
+    "City Rides — a Movo driver picks you up in a Movo vehicle and takes you where you need to go.\n\n" +
+      "Safe Ride — a Movo driver drives you home in your own vehicle, so you and your car both get home safely. " +
+      "We take care of getting your driver back afterwards.\n\nEither way you see your fare before you pay.",
   );
 
 export default function Home() {

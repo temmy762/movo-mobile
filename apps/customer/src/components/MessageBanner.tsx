@@ -49,10 +49,10 @@ export function MessageBanner() {
 
   return (
     <Animated.View pointerEvents="box-none" style={[s.wrap, { paddingTop: insets.top + 6, transform: [{ translateY: y }] }]}>
-      <Pressable onPress={open} style={s.card} accessibilityRole="button" accessibilityLabel={`New message from your chauffeur: ${msg.text}`}>
+      <Pressable onPress={open} style={s.card} accessibilityRole="button" accessibilityLabel={`New message from your driver: ${msg.text}`}>
         <View style={s.icon}><Icon name="message" size={16} color="#fff" /></View>
         <View style={{ flex: 1 }}>
-          <Text style={s.title}>New message from your chauffeur</Text>
+          <Text style={s.title}>New message from your driver</Text>
           <Text style={s.text} numberOfLines={2}>{msg.text}</Text>
         </View>
         <Text style={s.cta}>Open</Text>

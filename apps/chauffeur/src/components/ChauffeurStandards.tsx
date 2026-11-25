@@ -108,7 +108,7 @@ export function ChauffeurStandards() {
       <Section n={2} title="Client Service Standards">
         <IconList items={[
           ["user", "Greet clients courteously, using their name when available"],
-          ["door", "Concierge chauffeurs: open vehicle doors and assist with entry and exit"],
+          ["door", "Concierge drivers: open vehicle doors and assist with entry and exit"],
           ["luggage", "Assist with luggage when requested"],
           ["chat", "Maintain a quiet, professional environment unless the client initiates conversation"],
           ["shield", "Respect client privacy and never share personal or trip information"],
@@ -167,7 +167,7 @@ export function ChauffeurStandards() {
 
       <Section n={6} title="Safe Ride Additional Requirements">
         <IconList items={[
-          ["car", "Chauffeurs must have their own transportation to reach the customer’s pickup location"],
+          ["car", "Drivers must have their own transportation to reach the customer’s pickup location"],
           ["key", "Verify the customer, vehicle, destination and authorization to drive"],
           ["key", "Handle customer keys responsibly and return them to the customer or an authorized person"],
           ["pin", "Follow Movo dispatch instructions for your return after drop-off"],

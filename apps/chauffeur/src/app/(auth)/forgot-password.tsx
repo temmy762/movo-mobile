@@ -39,7 +39,7 @@ export default function ForgotPassword() {
           <Card style={{ gap: spacing.md, marginTop: spacing.xl }}>
             <Icon name="mail" size={28} />
             <Text style={styles.body}>
-              If a chauffeur account uses {email.trim()}, we&apos;ve emailed a link to set a new password.
+              If a driver account uses {email.trim()}, we&apos;ve emailed a link to set a new password.
               The link works for 30 minutes.
             </Text>
             <Button title="Back to log in" variant="secondary" onPress={() => router.back()} />

@@ -77,7 +77,7 @@ export default function Profile() {
   const confirmDelete = () =>
     Alert.alert(
       "Delete your account?",
-      "Your chauffeur account will be closed and your personal details, documents and banking information erased. Completed ride and payout records are kept, anonymised, for accounting. This can't be undone.",
+      "Your driver account will be closed and your personal details, documents and banking information erased. Completed ride and payout records are kept, anonymised, for accounting. This can't be undone.",
       [
         { text: "Cancel", style: "cancel" },
         { text: "Delete account", style: "destructive", onPress: deleteAccount },

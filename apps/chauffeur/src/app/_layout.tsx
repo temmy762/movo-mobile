@@ -73,7 +73,7 @@ export default function RootLayout() {
   const signedIn = !!driver;
   const active = driver?.status === "ACTIVE";
 
-  const main = !ready ? null : outdated ? <UpdateRequired appName="Movo Chauffeur" androidPackage="com.movoprive.chauffeur" /> : (
+  const main = !ready ? null : outdated ? <UpdateRequired appName="Movo Driver" androidPackage="com.movoprive.chauffeur" /> : (
       <QueryClientProvider client={queryClient}>
         {/* Connects only while signed in (the token); shared by tabs, chat, … */}
         <SocketProvider>
@@ -111,7 +111,7 @@ export default function RootLayout() {
       {ready && introDone && !signedIn && welcomeSeen === false && (
         <>
           <StatusBar style="light" />
-          <Welcome cards={WELCOME_CARDS} primary="Become a Movo chauffeur" secondary="I already have an account"
+          <Welcome cards={WELCOME_CARDS} primary="Become a Movo driver" secondary="I already have an account"
             onPrimary={() => leaveWelcome("/register")} onSecondary={() => leaveWelcome("/sign-in")} />
         </>
       )}

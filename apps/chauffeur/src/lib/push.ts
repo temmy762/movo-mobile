@@ -186,7 +186,7 @@ export async function sendTestNotification(kind: SoundKind): Promise<void> {
   const sound = sounds[kind];
   await N.scheduleNotificationAsync({
     content: {
-      title: kind === "requests" ? "New ride request" : "Movo Chauffeur",
+      title: kind === "requests" ? "New ride request" : "Movo Driver",
       body: kind === "requests" ? "Test: this is how ride requests will sound." : "Test: this is how your other updates will sound.",
       sound: iosSound(sound) ?? false,
       data: { type: "test" },

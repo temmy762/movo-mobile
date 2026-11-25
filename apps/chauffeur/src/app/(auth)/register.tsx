@@ -54,7 +54,7 @@ export default function Register() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ScreenHeader title="Become a Chauffeur" subtitle="Winnipeg, Canada" fallback="/sign-in" />
+      <ScreenHeader title="Become a Driver" subtitle="Winnipeg, Canada" fallback="/sign-in" />
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
           <Text style={styles.label}>I want to</Text>

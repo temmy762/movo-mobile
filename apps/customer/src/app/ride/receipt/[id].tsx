@@ -36,7 +36,7 @@ ${r.bookingNumber ? `<p class="muted" style="margin:0">Booking ${esc(r.bookingNu
 <div class="box"><p class="muted" style="margin:0 0 4px">Trip</p><p style="margin:2px 0">From ${esc(r.pickup)}</p>
 ${r.stops.map((s, i) => `<p style="margin:2px 0">Stop ${i + 1}: ${esc(s)}</p>`).join("")}
 <p style="margin:2px 0">To ${esc(r.dropoff)}</p>
-${r.chauffeur ? `<p class="muted" style="margin:6px 0 0">Chauffeur: ${esc(r.chauffeur)}${r.vehicle ? ` · ${esc(r.vehicle)}` : ""}</p>` : ""}</div>
+${r.chauffeur ? `<p class="muted" style="margin:6px 0 0">Driver: ${esc(r.chauffeur)}${r.vehicle ? ` · ${esc(r.vehicle)}` : ""}</p>` : ""}</div>
 <div class="box"><table>${r.items.map((i) => row(i.label, money(i.amount))).join("")}${row("Total", money(r.total), true)}</table>
 <p class="muted">${refunded ? "Refunded to" : "Paid with"} ${esc(r.card)}</p></div>
 <p class="muted" style="margin-top:28px">Movo Privé · Winnipeg, Manitoba · movoprive.com<br/>Questions about this receipt? support@movoprive.com</p>
@@ -117,7 +117,7 @@ export default function ReceiptScreen() {
               <Text style={styles.text}><Text style={styles.muted}>From </Text>{r.pickup}</Text>
               {r.stops.map((s, i) => <Text key={`${i}-${s}`} style={styles.text}><Text style={styles.muted}>Stop {i + 1} </Text>{s}</Text>)}
               <Text style={styles.text}><Text style={styles.muted}>To </Text>{r.dropoff}</Text>
-              {r.chauffeur && <Text style={styles.muted}>Chauffeur: {r.chauffeur}{r.vehicle ? ` · ${r.vehicle}` : ""}</Text>}
+              {r.chauffeur && <Text style={styles.muted}>Driver: {r.chauffeur}{r.vehicle ? ` · ${r.vehicle}` : ""}</Text>}
             </View>
 
             <View style={styles.section}>

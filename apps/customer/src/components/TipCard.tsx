@@ -62,7 +62,7 @@ export function TipCard({ id, tip, completedAt, name, courier }: {
   return (
     <View style={styles.card}>
       <Text style={styles.title}>Add a tip{name ? ` for ${name}` : ""}</Text>
-      <Text style={styles.sub}>{courier ? "100% goes to your driver. Charged to your card on file." : "100% goes to your chauffeur. Charged to the card you used for this ride."}</Text>
+      <Text style={styles.sub}>{courier ? "100% goes to your driver. Charged to your card on file." : "100% goes to your driver. Charged to the card you used for this ride."}</Text>
       <View style={styles.presets}>
         {PRESETS.map((p) => {
           const on = !custom.trim() && preset === p;

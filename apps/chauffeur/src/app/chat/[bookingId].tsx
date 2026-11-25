@@ -84,7 +84,7 @@ export default function Chat() {
         ) : messages.isError ? (
           <Text style={styles.empty}>
             {messages.error instanceof ApiError && messages.error.status === 403
-              ? "Chat is only available between the rider and their chauffeur."
+              ? "Chat is only available between the rider and their driver."
               : "Couldn't load messages. Pull down or try again shortly."}
           </Text>
         ) : (

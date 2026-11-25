@@ -66,7 +66,7 @@ function ProfileForm({ profile: p }: { profile: UserProfile }) {
             autoComplete="email" textContentType="emailAddress" />
           <Input label="Phone" value={form.phone} onChangeText={set("phone")} keyboardType="phone-pad"
             autoComplete="tel" textContentType="telephoneNumber" placeholder="+1 204 555 0123" />
-          <Text style={styles.hint}>Your chauffeur uses this number to reach you at pickup. Changing your email also changes how you sign in.</Text>
+          <Text style={styles.hint}>Your driver uses this number to reach you at pickup. Changing your email also changes how you sign in.</Text>
           {error ? <Text style={styles.error}>{error}</Text> : null}
           <Button title="Save changes" onPress={save} loading={saving} disabled={saving} />
         </ScrollView>

@@ -19,7 +19,7 @@ import { useUnreadCount } from "@/lib/unreadMessages";
 
 type SafeRide = ReturnType<typeof useSafeRide>;
 
-const roleLabel = (role: "PRIMARY" | "SUPPORT") => (role === "PRIMARY" ? "Primary Chauffeur" : "Support Chauffeur");
+const roleLabel = (role: "PRIMARY" | "SUPPORT") => (role === "PRIMARY" ? "Primary Driver" : "Support Driver");
 
 function whenLabel(iso: string) {
   return new Date(iso).toLocaleString("en-CA", {
@@ -148,7 +148,7 @@ export function SafeRideCard({ safe }: { safe: SafeRide }) {
       } />
 
       {safe.coDriver ? <CoDriverRow co={safe.coDriver} /> : primary && !uberReturn && safe.phase !== "completed" ? (
-        <Banner tone="amber" right={<ActivityIndicator size="small" color="#fbbf24" />}>Searching for a support chauffeur…</Banner>
+        <Banner tone="amber" right={<ActivityIndicator size="small" color="#fbbf24" />}>Searching for a support driver…</Banner>
       ) : null}
 
       <CareRoute safe={safe} />
@@ -197,14 +197,14 @@ export function SafeRideCard({ safe }: { safe: SafeRide }) {
           {primary && safe.waiting && <WaitingBanner waiting={safe.waiting} freeLabel="Free waiting time" />}
           {waitingOnPrimary && (
             <Banner right={<ActivityIndicator size="small" color={dark.soft} />}>
-              Waiting for the Primary chauffeur to complete the ride…
+              Waiting for the Primary driver to complete the ride…
             </Banner>
           )}
           {primary && <WalkAround bookingId={a.booking.id} stage="PICKUP" />}
           <View style={parts.actions}>
             {primary && phone ? <SquareButton icon="phone" label="Call customer" onPress={() => callNumber(phone)} /> : null}
             {chat}
-            <GradientButton title={safe.busy ? "…" : primary ? "Start Ride" : "Pick Up Primary Chauffeur"}
+            <GradientButton title={safe.busy ? "…" : primary ? "Start Ride" : "Pick Up Primary Driver"}
               onPress={safe.start} disabled={safe.busy || waitingOnPrimary} />
           </View>
           {primary && safe.waiting && safe.waiting.freeLeft === 0 && (
@@ -240,7 +240,7 @@ export function SafeRideCard({ safe }: { safe: SafeRide }) {
                   : "Your return is being arranged. We'll notify you when your pickup details are ready."
                 : safe.coDriver
                   ? `${safe.coDriver.driver.firstName} ${safe.coDriver.driver.lastName} is on the way to pick you up and take you back to your vehicle.`
-                  : "Your support chauffeur has been notified and will collect you shortly."}
+                  : "Your support driver has been notified and will collect you shortly."}
             </Text>
             <Text style={kit.dim}>
               {uberReturn ? "Your earnings for this Safe Ride have been credited." : "This Safe Ride stays open until you're back at your car."}
@@ -252,7 +252,7 @@ export function SafeRideCard({ safe }: { safe: SafeRide }) {
             </View>
           ) : safe.coDriver?.driver.phone ? (
             <View style={parts.actions}>
-              <OutlineButton title="Call Support Chauffeur" onPress={() => callNumber(safe.coDriver!.driver.phone!)} />
+              <OutlineButton title="Call Support Driver" onPress={() => callNumber(safe.coDriver!.driver.phone!)} />
             </View>
           ) : null}
         </>

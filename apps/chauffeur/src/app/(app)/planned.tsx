@@ -140,7 +140,7 @@ export default function Planned() {
       setNotice("Reservation confirmed. It's listed below until it's time to set off.");
     } catch (e) {
       setNotice(e instanceof ApiError && e.status === 409
-        ? "Another chauffeur accepted this reservation first."
+        ? "Another driver accepted this reservation first."
         : e instanceof ApiError && e.status !== 0 ? e.message : "Couldn't accept — check your connection and try again.");
     } finally {
       setActing(null);
@@ -285,7 +285,7 @@ export default function Planned() {
       </ScrollView>
 
       <HandBackModal visible={!!cancelTarget} title="Cancel this reservation?" keepLabel="Keep Reservation"
-        body={`Scheduled for ${whenLabel(cancelTarget?.scheduledAt ?? null)}. We'll automatically find another available chauffeur before pickup — the rider will be told we're arranging this, not that their ride was cancelled.`}
+        body={`Scheduled for ${whenLabel(cancelTarget?.scheduledAt ?? null)}. We'll automatically find another available driver before pickup — the rider will be told we're arranging this, not that their ride was cancelled.`}
         placeholder="Reason (optional) — e.g. vehicle issue, scheduling conflict"
         busy={cancelling} error={cancelError}
         onKeep={() => { setCancelTarget(null); setCancelError(null); }}

@@ -14,7 +14,7 @@ import { enablePush, getPushStatus, sendTestNotification, setAlertSound, type Pu
 const STATUS_TEXT: Record<PushStatus, { label: string; hint: string }> = {
   on: { label: "On", hint: "You'll get ride requests and updates even when the app is closed." },
   off: { label: "Off", hint: "Turn them on or you'll miss ride requests while the app is closed." },
-  blocked: { label: "Off", hint: "Notifications are turned off in your phone's settings for Movo Chauffeur. You'll miss ride requests." },
+  blocked: { label: "Off", hint: "Notifications are turned off in your phone's settings for Movo Driver. You'll miss ride requests." },
   unavailable: { label: "Unavailable", hint: "Notifications aren't available on this device." },
 };
 

@@ -9,9 +9,9 @@ import { ScreenHeader } from "@/components/ScreenHeader";
 import { emailSupport, openWeb } from "@/lib/links";
 
 const GPS_POLICY: { heading: string; body: string }[] = [
-  { heading: "When we track your location", body: "Only while you're online in the Movo Chauffeur app — including in the background, so you keep receiving nearby requests and riders can see you arriving. Tracking stops when you go offline." },
+  { heading: "When we track your location", body: "Only while you're online in the Movo Driver app — including in the background, so you keep receiving nearby requests and riders can see you arriving. Tracking stops when you go offline." },
   { heading: "How it's used", body: "To match you with nearby ride requests, show your position to the rider during an accepted ride, and calculate routes, fares and arrival times." },
-  { heading: "Who sees it", body: "A rider sees your location only after you accept their ride, and only for that ride. Movo's dispatch team can see online chauffeurs to manage rides and keep everyone safe." },
+  { heading: "Who sees it", body: "A rider sees your location only after you accept their ride, and only for that ride. Movo's dispatch team can see online drivers to manage rides and keep everyone safe." },
   { heading: "Your control", body: "Go offline at any time to stop sharing. You can also turn off location in your phone's settings, but you won't receive ride requests without it." },
 ];
 
@@ -45,7 +45,7 @@ export default function Help() {
 
         <Card style={{ gap: 6 }}>
           <Text style={styles.title}>Agreements</Text>
-          <Text style={styles.link} onPress={() => openWeb("/chauffeur-agreement")}>Chauffeur agreement</Text>
+          <Text style={styles.link} onPress={() => openWeb("/chauffeur-agreement")}>Driver agreement</Text>
           <Text style={styles.link} onPress={() => openWeb("/terms")}>Terms of service</Text>
         </Card>
       </ScrollView>

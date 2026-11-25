@@ -65,7 +65,7 @@ export const useSession = create<SessionState>((set, get) => ({
   async signIn(email, password) {
     const { user, token } = await auth.login(email.trim().toLowerCase(), password);
     if (user.role !== "USER") {
-      throw new ApiError(403, "This is a Movo Privé rider account sign-in. Chauffeurs use the Movo Chauffeur app.");
+      throw new ApiError(403, "This is a Movo Privé rider account sign-in. Drivers use the Movo Driver app.");
     }
     await adopt(token, user, set);
   },

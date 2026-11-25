@@ -9,5 +9,5 @@ export const SUPPORT_EMAIL = "support@movoprive.com";
 export const openWeb = (path: string) =>
   WebBrowser.openBrowserAsync(`${API_URL}${path}`, { controlsColor: colors.navy, toolbarColor: colors.ivory });
 
-export const emailSupport = (subject = "Chauffeur app") =>
+export const emailSupport = (subject = "Driver app") =>
   Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}`);

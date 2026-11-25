@@ -16,7 +16,7 @@ export function BookingDone({ bookingId, title, bookingNumber, scheduledAt, nowT
       {bookingNumber ? <Text style={styles.ref}>{bookingNumber}</Text> : null}
       <Text style={styles.body}>
         {scheduledAt
-          ? `Your chauffeur will pick you up on ${pickupLabel(scheduledAt)}. We'll let you know when they're on the way.`
+          ? `Your driver will pick you up on ${pickupLabel(scheduledAt)}. We'll let you know when they're on the way.`
           : nowText}
       </Text>
       <Pressable onPress={() => router.replace({ pathname: "/ride/[id]", params: { id: bookingId } })} style={{ alignSelf: "stretch" }} accessibilityRole="button">

@@ -74,7 +74,7 @@ export default function Chat() {
           <Icon name="back" size={18} color="#374151" strokeWidth={2.5} />
         </Pressable>
         <View>
-          <Text style={styles.title}>{number ? number : "Your chauffeur"}</Text>
+          <Text style={styles.title}>{number ? number : "Your driver"}</Text>
           <Text style={styles.live}>Live Chat</Text>
         </View>
       </View>
@@ -85,7 +85,7 @@ export default function Chat() {
         ) : messages.isError ? (
           <Text style={styles.empty}>
             {messages.error instanceof ApiError && messages.error.status === 403
-              ? "Chat opens once a chauffeur has accepted your ride."
+              ? "Chat opens once a driver has accepted your ride."
               : "Couldn't load messages. Pull down or try again shortly."}
           </Text>
         ) : (

@@ -256,7 +256,7 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
   if (bookedId) {
     return (
       <BookingDone bookingId={bookedId} title={scheduledAt ? "Safe Ride reserved" : "Safe Ride booked"} scheduledAt={scheduledAt}
-        nowText="We're assigning your chauffeur now. A confirmation is on its way to your email, and you'll get an update as soon as a chauffeur accepts." />
+        nowText="We're assigning your driver now. A confirmation is on its way to your email, and you'll get an update as soon as a driver accepts." />
     );
   }
 
@@ -310,7 +310,7 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
                     : <ActivityIndicator size="small" color={colors.navy} />}
                 </View>
               )}
-              {previewReady && <Text style={styles.muted}>GST and your chauffeur&apos;s return ride included. Confirmed before you pay.</Text>}
+              {previewReady && <Text style={styles.muted}>GST and your driver&apos;s return ride included. Confirmed before you pay.</Text>}
 
               <Label>Pickup instructions (optional)</Label>
               <Field value={instructions} onChangeText={(v) => setInstructions(v.slice(0, 300))} multiline
@@ -319,7 +319,7 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
               <View style={styles.between}>
                 <View style={{ flex: 1 }}>
                   <Label>Passengers</Label>
-                  <Text style={styles.muted}>Count everyone, including yourself. Leave a seat for the chauffeur.</Text>
+                  <Text style={styles.muted}>Count everyone, including yourself. Leave a seat for the driver.</Text>
                 </View>
                 <View style={styles.stepper}>
                   <Pressable onPress={() => setPassengers((p) => Math.max(1, p - 1))} disabled={passengers <= 1} style={styles.stepBtn}>
@@ -380,7 +380,7 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
                 autoCapitalize="characters" autoCorrect={false} />
               <Segments options={[{ v: "Automatic" as const, l: "Automatic" }, { v: "Manual" as const, l: "Manual" }]}
                 value={vehicle.transmission} onChange={(v) => setV("transmission", v)} />
-              <Text style={styles.muted}>Transmission determines chauffeur availability.</Text>
+              <Text style={styles.muted}>Transmission determines driver availability.</Text>
               <Check checked={roadworthy} onChange={setRoadworthy}>
                 Vehicle is roadworthy and has a working seat belt for every occupant.
               </Check>
@@ -397,14 +397,14 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
               <Field value={riderPhone} onChangeText={setRiderPhone} placeholder="+1 204 555 0123" keyboardType="phone-pad"
                 autoComplete={forSomeoneElse ? "off" : "tel"} />
               <Text style={styles.muted}>
-                {forSomeoneElse ? "Your chauffeur will contact the rider on this number." : "Your chauffeur will use this number to reach you."}
+                {forSomeoneElse ? "Your driver will contact the rider on this number." : "Your driver will use this number to reach you."}
               </Text>
               <Label>Email for receipt *</Label>
               <Field value={receiptEmail} onChangeText={setReceiptEmail} placeholder="you@example.com" keyboardType="email-address"
                 autoCapitalize="none" autoComplete="email" />
               <View style={{ gap: 12, marginTop: 4 }}>
                 <Check checked={ownsVehicle} onChange={setOwnsVehicle}>I own this vehicle or have permission to authorize its use.</Check>
-                <Check checked={authorizes} onChange={setAuthorizes}>I authorize the assigned MOVO chauffeur to drive it for this booking.</Check>
+                <Check checked={authorizes} onChange={setAuthorizes}>I authorize the assigned MOVO driver to drive it for this booking.</Check>
                 <Check checked={agreesTerms} onChange={setAgreesTerms}>
                   I agree to the <Text style={styles.link} onPress={() => openWeb("/terms")}>Terms</Text> and Safe Ride consent.
                 </Check>
@@ -433,7 +433,7 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
                 <View style={[styles.between, styles.totalRow]}>
                   <Text style={styles.total}>Total</Text><Text style={styles.total}>{money(estimate.total)}</Text>
                 </View>
-                <Text style={styles.muted}>One all-inclusive fare: your chauffeur, getting them back afterwards, and GST.</Text>
+                <Text style={styles.muted}>One all-inclusive fare: your driver, getting them back afterwards, and GST.</Text>
               </View>
             </>
           )}

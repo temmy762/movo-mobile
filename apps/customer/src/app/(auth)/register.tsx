@@ -71,7 +71,7 @@ export default function Register() {
                 <Icon name={showPassword ? "eyeOff" : "eye"} size={17} color="#9CA3AF" />
               </Pressable>
             } />
-          <Text style={styles.hint}>At least 8 characters. Your chauffeur uses your mobile number to reach you at pickup.</Text>
+          <Text style={styles.hint}>At least 8 characters. Your driver uses your mobile number to reach you at pickup.</Text>
 
           <Pressable onPress={() => setAgreed((v) => !v)} style={styles.agree} accessibilityRole="checkbox" accessibilityState={{ checked: agreed }}>
             <View style={[styles.box, agreed && { backgroundColor: colors.navy, borderColor: colors.navy }]}>
