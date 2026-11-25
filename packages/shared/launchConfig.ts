@@ -21,7 +21,7 @@ export const AIRPORT_TRANSFER_ENABLED = false;
 export const HOURLY_CHARTER_ENABLED = false;
 
 /** Chauffeur vehicle rental (dashboard, onboarding option, admin, public site). */
-export const VEHICLE_RENTAL_ENABLED = false;
+export const VEHICLE_RENTAL_ENABLED = true;
 
 /**
  * Movo Courier pilot (La Salle + Steinbach) opens Friday Nov 27, 2026, 00:00
