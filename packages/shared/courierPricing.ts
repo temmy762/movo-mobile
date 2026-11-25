@@ -1,5 +1,6 @@
 /* AUTO-SYNCED from movo-web/lib/courier/pricing.ts by scripts/sync-shared.mjs — do not edit here. */
 
+import { MOVO_TZ } from "./winnipegTime";
 /**
  * Movo Courier pricing — pure math, safe for the browser and the apps.
  *
@@ -114,7 +115,7 @@ export function oneWayTimeSlots(): string[] {
   return out;
 }
 
-const WPG = "America/Winnipeg";
+const WPG = MOVO_TZ;
 const dayLabel = (d: Date) => d.toLocaleDateString("en-CA", { timeZone: WPG, weekday: "short", month: "short", day: "numeric" });
 const clockLabel = (d: Date) => d.toLocaleTimeString("en-CA", { timeZone: WPG, hour: "numeric", minute: "2-digit" })
   .replace(/\s?a\.?m\.?$/i, " am").replace(/\s?p\.?m\.?$/i, " pm");

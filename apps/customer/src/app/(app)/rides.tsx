@@ -11,6 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { user as userApi } from "@movo/api";
 import type { UserBooking } from "@movo/shared";
 import { colors, fonts } from "@movo/ui";
+import { MOVO_TZ } from "@movo/shared";
 
 type Tab = "upcoming" | "past" | "canceled";
 const TABS: { id: Tab; label: string }[] = [
@@ -37,7 +38,7 @@ const IMAGES = {
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-CA", {
-    timeZone: "America/Winnipeg", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+    timeZone: MOVO_TZ, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
   });
 
 function RideCard({ ride }: { ride: UserBooking }) {

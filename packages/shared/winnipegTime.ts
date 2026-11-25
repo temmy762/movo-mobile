@@ -6,7 +6,12 @@
  * Winnipeg time too — reading them in the phone's own time zone booked the
  * wrong pickup for anyone whose device is set elsewhere.
  */
-export const MOVO_TZ = "America/Winnipeg";
+/* Manitoba moved to permanent daylight time on Nov 1, 2026 — Winnipeg is
+   UTC−5 all year. Servers and phones with older time-zone data still apply
+   the old fall-back (UTC−6), so Movo uses a fixed UTC−5 zone instead of
+   "America/Winnipeg". (IANA "Etc/GMT+5" means UTC−5 — the sign is inverted.)
+   Everything Movo has recorded (launched Oct 14, 2026) was already UTC−5. */
+export const MOVO_TZ = "Etc/GMT+5";
 
 /* Offset of `tz` from UTC at instant `ms`, in ms (handles DST) */
 function tzOffsetMs(ms: number, tz: string): number {

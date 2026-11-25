@@ -16,8 +16,9 @@ import { ApiError, driver as driverApi } from "@movo/api";
 import type { WalletTransaction } from "@movo/shared";
 import { Icon, colors, fonts } from "@movo/ui";
 import { money } from "@/components/homeKit";
+import { MOVO_TZ } from "@movo/shared";
 
-const TZ = "America/Winnipeg";
+const TZ = MOVO_TZ;
 
 /* "Today, 3:50 PM" / "Oct 14, 3:50 PM" — Winnipeg time */
 function when(iso: string) {

@@ -11,12 +11,12 @@ import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, rides } from "@movo/api";
-import { SOCKET_EVENTS, type BookingMessage } from "@movo/shared";
+import { SOCKET_EVENTS, type BookingMessage, MOVO_TZ } from "@movo/shared";
 import { Icon, colors, fonts } from "@movo/ui";
 import { useSocket } from "@/lib/socket";
 import { markRead, setOpenChat } from "@/lib/unreadMessages";
 
-const time = (iso: string) => new Date(iso).toLocaleTimeString([], { timeZone: "America/Winnipeg", hour: "numeric", minute: "2-digit" });
+const time = (iso: string) => new Date(iso).toLocaleTimeString([], { timeZone: MOVO_TZ, hour: "numeric", minute: "2-digit" });
 
 export default function Chat() {
   const { id: bookingId, number } = useLocalSearchParams<{ id: string; number?: string }>();

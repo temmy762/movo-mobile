@@ -21,13 +21,14 @@ import { Card, Icon, colors, fonts } from "@movo/ui";
 import { useShift } from "@/lib/shift";
 import { HandBackModal, openNavigation } from "@/components/tripParts";
 import { gradient, money } from "@/components/homeKit";
+import { MOVO_TZ } from "@movo/shared";
 
 const SOON_MS = 60 * 60 * 1000;
 
 function whenLabel(iso: string | null) {
   if (!iso) return "";
   return new Date(iso).toLocaleString("en-CA", {
-    timeZone: "America/Winnipeg", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+    timeZone: MOVO_TZ, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
   });
 }
 
@@ -49,11 +50,11 @@ function Route({ pickup, dropoff }: { pickup: string; dropoff: string }) {
 /* "Today, 3:50 PM" / "Oct 14, 2026, 3:50 PM" */
 function pastWhen(iso: string) {
   const d = new Date(iso);
-  const day = (x: Date) => x.toLocaleDateString("en-CA", { timeZone: "America/Winnipeg" });
-  const time = d.toLocaleTimeString("en-US", { timeZone: "America/Winnipeg", hour: "numeric", minute: "2-digit" });
+  const day = (x: Date) => x.toLocaleDateString("en-CA", { timeZone: MOVO_TZ });
+  const time = d.toLocaleTimeString("en-US", { timeZone: MOVO_TZ, hour: "numeric", minute: "2-digit" });
   const date = day(d) === day(new Date())
     ? "Today"
-    : d.toLocaleDateString("en-US", { timeZone: "America/Winnipeg", month: "short", day: "numeric", year: "numeric" });
+    : d.toLocaleDateString("en-US", { timeZone: MOVO_TZ, month: "short", day: "numeric", year: "numeric" });
   return `${date}, ${time}`;
 }
 

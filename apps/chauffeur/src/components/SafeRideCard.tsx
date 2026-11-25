@@ -16,6 +16,7 @@ import {
 import { WalkAround } from "./WalkAround";
 import { EmergencyButton } from "./EmergencyButton";
 import { useUnreadCount } from "@/lib/unreadMessages";
+import { MOVO_TZ } from "@movo/shared";
 
 type SafeRide = ReturnType<typeof useSafeRide>;
 
@@ -23,7 +24,7 @@ const roleLabel = (role: "PRIMARY" | "SUPPORT") => (role === "PRIMARY" ? "Primar
 
 function whenLabel(iso: string) {
   return new Date(iso).toLocaleString("en-CA", {
-    timeZone: "America/Winnipeg", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+    timeZone: MOVO_TZ, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
   });
 }
 

@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { driver as driverApi } from "@movo/api";
-import { SOCKET_EVENTS, winnipegNowTime, type DriverBooking } from "@movo/shared";
+import { SOCKET_EVENTS, winnipegNowTime, type DriverBooking, MOVO_TZ } from "@movo/shared";
 import { Icon, fonts, colors } from "@movo/ui";
 import { useSession } from "@/lib/session";
 import { useShift } from "@/lib/shift";
@@ -32,7 +32,7 @@ function greeting(): string {
 
 function whenLabel(iso: string) {
   return new Date(iso).toLocaleString("en-CA", {
-    timeZone: "America/Winnipeg", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+    timeZone: MOVO_TZ, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
   });
 }
 
