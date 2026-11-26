@@ -4,8 +4,9 @@
  * foreground service / iOS background location). A ping marks the chauffeur
  * online on the server, so nothing is sent once they go offline.
  *
- * During a trip (after "Start Ride") the newest point also goes to the ride,
- * which relays it to the rider's live map, and updates come more often.
+ * From accepting a ride until it ends, the newest point also goes to the ride
+ * (the rider's live map follows the car to the pickup and on the trip), and
+ * updates come every 3 s.
  *
  * The task is defined at module scope and this file is imported from the app
  * entry (index.ts), so it exists when the OS wakes the app in the background.
@@ -41,6 +42,7 @@ async function deliver(locations: Location.LocationObject[]) {
     lat: l.coords.latitude,
     lng: l.coords.longitude,
     timestamp: l.timestamp,
+    ...fixExtras(l.coords),
   }));
   try {
     await driverApi.sendLocation(points);
@@ -55,12 +57,12 @@ async function deliver(locations: Location.LocationObject[]) {
 
   const tripId = await SecureStore.getItemAsync(TRIP_KEY);
   if (tripId) {
-    const { coords } = locations[locations.length - 1];
+    const last = locations[locations.length - 1];
     await driverApi.tripLocation(tripId, {
-      lat: coords.latitude,
-      lng: coords.longitude,
-      heading: coords.heading != null && coords.heading >= 0 ? coords.heading : undefined,
-      speed: coords.speed != null && coords.speed >= 0 ? coords.speed : undefined,
+      lat: last.coords.latitude,
+      lng: last.coords.longitude,
+      timestamp: last.timestamp,
+      ...fixExtras(last.coords),
     }).catch(async (e) => {
       /* The ride ended (completed / cancelled) — stop sending to it */
       if (e instanceof ApiError && (e.status === 409 || e.status === 403 || e.status === 404)) {
@@ -70,18 +72,27 @@ async function deliver(locations: Location.LocationObject[]) {
   }
 }
 
-/* Every 15 s / 50 m on shift; every 5 s / 10 m on a trip (the web's rate) */
+/* Direction, speed and accuracy when the phone knows them (negative = unknown) */
+function fixExtras(c: Location.LocationObjectCoords) {
+  return {
+    ...(c.heading != null && c.heading >= 0 ? { heading: c.heading } : {}),
+    ...(c.speed != null && c.speed >= 0 ? { speed: c.speed } : {}),
+    ...(c.accuracy != null && c.accuracy >= 0 ? { accuracy: c.accuracy } : {}),
+  };
+}
+
+/* Every 15 s / 50 m on shift; every 3 s / 5 m on a ride (the web's rate) */
 function trackingOptions(onTrip: boolean): Location.LocationTaskOptions {
   return {
     accuracy: onTrip ? Location.Accuracy.BestForNavigation : Location.Accuracy.High,
-    timeInterval: onTrip ? 5_000 : 15_000,
-    distanceInterval: onTrip ? 10 : 50,
-    deferredUpdatesInterval: onTrip ? 5_000 : 15_000,
+    timeInterval: onTrip ? 3_000 : 15_000,
+    distanceInterval: onTrip ? 5 : 50,
+    deferredUpdatesInterval: onTrip ? 3_000 : 15_000,
     pausesUpdatesAutomatically: false,
     activityType: Location.ActivityType.AutomotiveNavigation,
     showsBackgroundLocationIndicator: true,
     foregroundService: {
-      notificationTitle: onTrip ? "Trip in progress" : "You're online",
+      notificationTitle: onTrip ? "On a ride" : "You're online",
       notificationBody: onTrip
         ? "Movo is sharing your location with your rider."
         : "Movo is sharing your location so you receive nearby ride requests.",
@@ -136,7 +147,7 @@ export async function startShiftLocation(): Promise<LocationAccess> {
 
   /* Send a first fix right away so the server has a fresh position */
   Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High })
-    .then((l) => driverApi.sendLocation([{ lat: l.coords.latitude, lng: l.coords.longitude, timestamp: l.timestamp }]))
+    .then((l) => driverApi.sendLocation([{ lat: l.coords.latitude, lng: l.coords.longitude, timestamp: l.timestamp, ...fixExtras(l.coords) }]))
     .catch(() => {});
 
   return background && bg?.status === "granted" ? "always" : "foreground";

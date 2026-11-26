@@ -14,10 +14,11 @@ import MapView, { Marker, Polyline, type LatLng } from "react-native-maps";
 import * as Location from "expo-location";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, rides } from "@movo/api";
-import { SOCKET_EVENTS, type DriverPosition } from "@movo/shared";
+import { SOCKET_EVENTS, MOVO_TZ, decodePolyline, etaClock, etaLabel, isNewer, type LiveEta, type LivePoint } from "@movo/shared";
 import { Icon, colors, fonts } from "@movo/ui";
 import { useRoadRoute } from "@/lib/useRoadRoute";
 import { useSocket } from "@/lib/socket";
+import { LiveCarMarker } from "@/components/LiveCarMarker";
 import { RouteChangeSheet } from "@/components/RouteChangeSheet";
 import { TipCard } from "@/components/TipCard";
 import { EmergencyButton } from "@/components/EmergencyButton";
@@ -43,10 +44,16 @@ function stopsOf(stops: unknown): string[] {
 
 export default function Ride() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { join, leaveBooking, on } = useSocket();
+  const { join, leaveBooking, on, connected } = useSocket();
   const queryClient = useQueryClient();
   const map = useRef<MapView>(null);
-  const [position, setPosition] = useState<DriverPosition | null>(null);
+  const [position, setPosition] = useState<LivePoint | null>(null);
+  /* Live ETA + road route from the server (trip.eta) */
+  const [eta, setEta] = useState<LiveEta | null>(null);
+  /* The camera follows the car until the rider pans; Recentre brings it back */
+  const [pannedIn, setPannedIn] = useState<string | null>(null);
+  /* Socket and poll can cross — keep the newest point */
+  const acceptPoint = (p: LivePoint) => setPosition((cur) => (isNewer(p, cur) ? p : cur));
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
@@ -75,10 +82,19 @@ export default function Ride() {
       if ((data as { bookingId?: string })?.bookingId === id) refresh();
     }));
     const offLoc = on(SOCKET_EVENTS.DRIVER_LOCATION, (data) => {
-      const d = data as { bookingId?: string; lat?: number; lng?: number; heading?: number };
-      if (d.bookingId === id && typeof d.lat === "number" && typeof d.lng === "number") setPosition({ lat: d.lat, lng: d.lng, heading: d.heading });
+      const d = data as { bookingId?: string; lat?: number; lng?: number; heading?: number; speed?: number; ts?: number };
+      if (d.bookingId === id && typeof d.lat === "number" && typeof d.lng === "number") {
+        setPosition((cur) => {
+          const p = { lat: d.lat!, lng: d.lng!, heading: d.heading, speed: d.speed, ts: d.ts };
+          return isNewer(p, cur) ? p : cur;
+        });
+      }
     });
-    return () => { offs.forEach((off) => off()); offLoc(); leaveBooking(id); };
+    const offEta = on(SOCKET_EVENTS.TRIP_ETA, (data) => {
+      const d = data as LiveEta;
+      if (d.bookingId === id) setEta(d);
+    });
+    return () => { offs.forEach((off) => off()); offLoc(); offEta(); leaveBooking(id); };
   }, [id, join, leaveBooking, on, queryClient]);
 
   /* Starting position once a chauffeur is on the job */
@@ -107,22 +123,45 @@ export default function Ride() {
     })().catch(() => {});
     return () => { cancelled = true; sub?.remove(); };
   }, [sharing, id]);
+  /* Position + ETA on open, then polled only while the socket is down */
   useEffect(() => {
     if (!hasDriver || !live) return;
-    rides.driverLocation(id).then((d) => { if (d.position) setPosition(d.position); }).catch(() => {});
-  }, [id, hasDriver, live]);
+    const load = () => rides.driverLocation(id).then((d) => {
+      const p = d.position;
+      if (p) acceptPoint({ lat: p.lat, lng: p.lng, heading: p.heading, speed: p.speed, ts: p.timestamp ? Date.parse(p.timestamp) : null });
+      if (d.eta) setEta((cur) => (!cur || d.eta!.at > cur.at ? d.eta! : cur));
+    }).catch(() => {});
+    load();
+    if (connected) return;
+    const t = setInterval(load, 6_000);
+    return () => clearInterval(t);
+  }, [id, hasDriver, live, connected]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const pickupPt: LatLng | null = r?.pickupLat != null && r.pickupLng != null ? { latitude: r.pickupLat, longitude: r.pickupLng } : null;
   const dropoffPt: LatLng | null = r?.dropoffLat != null && r.dropoffLng != null ? { latitude: r.dropoffLat, longitude: r.dropoffLng } : null;
   const driverPt: LatLng | null = position && live && hasDriver ? { latitude: position.lat, longitude: position.lng } : null;
 
-  /* Route line: chauffeur → pickup on the way, chauffeur → destination during
-     the trip, otherwise the trip itself (pickup → destination) */
-  const routeEnds: [LatLng | null, LatLng | null] =
-    driverPt && phase === "in_progress" ? [driverPt, dropoffPt]
+  /* The server's live route (driver → pickup on the way, → destination on the
+     trip) when it matches the phase; otherwise the app asks for one */
+  const etaFits = !!eta && !!driverPt && (eta.target === "dropoff" ? phase === "in_progress" : phase === "on_the_way");
+  const serverLine: LatLng[] | null = etaFits && eta
+    ? decodePolyline(eta.polyline).map((p) => ({ latitude: p.lat, longitude: p.lng }))
+    : null;
+  const routeEnds: [LatLng | null, LatLng | null] = serverLine ? [null, null]
+    : driverPt && phase === "in_progress" ? [driverPt, dropoffPt]
       : driverPt && phase === "on_the_way" ? [driverPt, pickupPt]
         : live && phase !== "arrived" && phase !== "in_progress" ? [pickupPt, dropoffPt] : [null, null];
-  const route = useRoadRoute(routeEnds[0], routeEnds[1]);
+  const fetched = useRoadRoute(routeEnds[0], routeEnds[1]);
+  const route = serverLine ? { coordinates: serverLine, exact: true } : fetched;
+  /* Following unless the rider panned away during this phase */
+  const following = pannedIn !== phase;
+  const etaText = etaFits && eta ? `${etaLabel(eta)} · ${etaClock(eta, MOVO_TZ)}` : null;
+
+  /* Follow the car with each new position */
+  useEffect(() => {
+    if (!following || !driverPt) return;
+    map.current?.animateCamera({ center: driverPt }, { duration: 800 });
+  }, [following, driverPt?.latitude, driverPt?.longitude]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* Frame what matters now: chauffeur → pickup before the trip, → drop-off during it */
   const frameKey = [phase, !!driverPt, pickupPt?.latitude, dropoffPt?.latitude].join("|");
@@ -187,19 +226,23 @@ export default function Ride() {
 
   return (
     <View style={styles.screen}>
-      <MapView ref={map} style={styles.map} initialRegion={WINNIPEG} showsUserLocation={live} toolbarEnabled={false} userInterfaceStyle="light">
+      <MapView ref={map} style={styles.map} initialRegion={WINNIPEG} showsUserLocation={live} toolbarEnabled={false} userInterfaceStyle="light"
+        onPanDrag={() => { if (following) setPannedIn(phase); }}>
         {route && (
           <Polyline coordinates={route.coordinates} strokeColor={colors.navy} strokeWidth={4}
             lineDashPattern={route.exact ? undefined : [8, 8]} />
         )}
         {pickupPt && <Marker coordinate={pickupPt} title="Pickup" pinColor={colors.navy} />}
         {dropoffPt && <Marker coordinate={dropoffPt} title="Destination" pinColor="#ef4444" />}
-        {driverPt && (
-          <Marker coordinate={driverPt} title={d ? `${d.firstName} (your driver)` : "Your driver"} anchor={{ x: 0.5, y: 0.5 }}>
-            <View style={styles.car}><View style={styles.carDot} /></View>
-          </Marker>
+        {driverPt && position && (
+          <LiveCarMarker point={position} title={d ? `${d.firstName} (your driver)` : "Your driver"} />
         )}
       </MapView>
+      {!following && driverPt && (
+        <Pressable onPress={() => setPannedIn(null)} style={styles.recentre} accessibilityRole="button" accessibilityLabel="Recentre on your driver">
+          <Text style={styles.recentreText}>Recentre</Text>
+        </Pressable>
+      )}
       <SafeAreaView edges={["top"]} style={styles.topBar} pointerEvents="box-none">
         <Pressable onPress={goBack} style={styles.back} accessibilityRole="button" accessibilityLabel="Back">
           <Icon name="back" size={18} color="#374151" strokeWidth={2.5} />
@@ -213,6 +256,7 @@ export default function Ride() {
           {live && <View style={styles.liveDot} />}
         </View>
         <Text style={styles.title}>{h.title}</Text>
+        {etaText && <Text style={styles.eta}>{etaText}</Text>}
         <Text style={styles.body}>{h.body}</Text>
         {sharing && locationShared && (
           <Text style={styles.small}>Your driver can see your location until pickup, to help them find you.</Text>
@@ -425,6 +469,9 @@ function RateChauffeur({ id, name }: { id: string; name?: string }) {
 }
 
 const styles = StyleSheet.create({
+  eta: { fontFamily: fonts.bodySemi, fontSize: 15, color: colors.navy, marginTop: 2 },
+  recentre: { position: "absolute", right: 14, top: "34%", backgroundColor: "#fff", borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 6, elevation: 3 },
+  recentreText: { fontFamily: fonts.bodySemi, fontSize: 13, color: colors.navy },
   screen: { flex: 1, backgroundColor: "#F5F5F2" },
   center: { alignItems: "center", justifyContent: "center", gap: 10 },
   map: { height: "42%" },

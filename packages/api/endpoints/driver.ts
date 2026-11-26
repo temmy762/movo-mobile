@@ -74,7 +74,7 @@ export const rateRider = (id: string, rating: number, feedback: string | null) =
   request<unknown>(`/api/bookings/${id}/rating`, { body: { rating, feedback } });
 
 /* On a trip: persisted and relayed live to the rider's map. 409 once the ride ended. */
-export const tripLocation = (id: string, p: { lat: number; lng: number; heading?: number; speed?: number }) =>
+export const tripLocation = (id: string, p: { lat: number; lng: number; heading?: number; speed?: number; accuracy?: number; timestamp?: number }) =>
   request<{ ok: true }>(`/api/bookings/${id}/driver-location`, { body: p });
 
 /* ── Chat with the rider (standard chauffeur / Safe Ride PRIMARY only) ── */

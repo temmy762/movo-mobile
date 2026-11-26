@@ -289,7 +289,7 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
 
           {step === 1 && (
             <>
-              <BookingMap pickup={pickup} dropoff={dropoff} />
+              <BookingMap pickup={pickup} dropoff={dropoff} nearby />
               <View style={styles.card}>
                 <Pressable onPress={() => setSearching("pickup")} style={styles.addr} accessibilityRole="button">
                   <View style={[styles.dot, { backgroundColor: colors.navy }]} />
@@ -415,7 +415,7 @@ export function SafeRideBooking({ initialDropoff }: { initialDropoff?: string })
 
           {step === 4 && estimate && (
             <>
-              <BookingMap pickup={pickup} dropoff={dropoff} />
+              <BookingMap pickup={pickup} dropoff={dropoff} nearby />
               <View style={styles.summary}>
                 <View style={styles.sumRow}><View style={[styles.dot, { backgroundColor: colors.navy }]} /><Text style={styles.sumText}>{pickup}</Text></View>
                 <View style={styles.sumRow}><View style={[styles.dot, { backgroundColor: "#ef4444" }]} /><Text style={styles.sumText}>{dropoff}</Text></View>

@@ -160,7 +160,9 @@ export function useSafeRide({ canOffer, onAccepted }: {
   const waiting = useWaitingClock(wait, !!arrivedAt);
 
   /* Location goes to the ride while driving it */
-  const tripId = phase === "started" ? assignment?.booking.id : undefined;
+  /* The customer follows the PRIMARY driver, from accepting until the trip ends */
+  const tripId = assignment?.role === "PRIMARY" && (phase === "accepted" || phase === "arrived" || phase === "started")
+    ? assignment.booking.id : undefined;
   useEffect(() => {
     if (!tripId) return;
     setTripTracking(tripId);

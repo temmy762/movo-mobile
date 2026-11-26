@@ -2,17 +2,23 @@
  * The booking screens' map: where you are before anything is picked, the
  * pickup pin once it is, and the road route to the destination once both are
  * set. Addresses are placed through movo-web (/api/places/geocode) and the
- * line follows the roads (/api/places/route). A preview — panning is off so it
- * never fights the form's scrolling.
+ * line follows the roads (/api/places/route).
+ *
+ * `nearby`: live nearby cars around the pickup (or you), refreshed every
+ * 10 s, gliding and facing their direction, with "nearest car N min away".
+ * `driver`: a live driver to follow instead (Movo Courier tracking), with the
+ * server's route line when given.
  */
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, Polyline, type LatLng } from "react-native-maps";
 import * as Location from "expo-location";
 import { useQuery } from "@tanstack/react-query";
-import { places } from "@movo/api";
+import { places, rides } from "@movo/api";
+import { decodePolyline, type LivePoint } from "@movo/shared";
 import { colors, fonts } from "@movo/ui";
 import { useRoadRoute } from "@/lib/useRoadRoute";
+import { LiveCarMarker } from "./LiveCarMarker";
 
 const WINNIPEG = { latitude: 49.8951, longitude: -97.1384, latitudeDelta: 0.12, longitudeDelta: 0.12 };
 const CLOSE = { latitudeDelta: 0.02, longitudeDelta: 0.02 };
@@ -32,13 +38,34 @@ function usePlace(address: string) {
   return { point, notFound: a.length >= 3 && q.isError };
 }
 
-/** `driver`: a live position to show too (Movo Courier tracking) */
-export function BookingMap({ pickup, dropoff, driver, driverLabel }: { pickup: string; dropoff: string; driver?: LatLng | null; driverLabel?: string }) {
+/* Live nearby cars around a spot, every 10 s */
+function useNearby(center: LatLng | null, enabled: boolean, tier?: string | null) {
+  const lat = center ? Math.round(center.latitude * 1000) / 1000 : null;
+  const lng = center ? Math.round(center.longitude * 1000) / 1000 : null;
+  const q = useQuery({
+    queryKey: ["nearby-cars", lat, lng, tier ?? ""],
+    queryFn: () => rides.nearbyCars(lat!, lng!, tier),
+    enabled: enabled && lat != null && lng != null,
+    refetchInterval: 10_000,
+    staleTime: 5_000,
+  });
+  return q.data ?? { cars: [], nearestMinutes: null };
+}
+
+export function BookingMap({ pickup, dropoff, driver, driverLabel, driverRoute, nearby, tier }: {
+  pickup: string; dropoff: string;
+  driver?: LivePoint | null; driverLabel?: string;
+  /** The server's encoded route line from the driver (trip.eta) */
+  driverRoute?: string | null;
+  nearby?: boolean; tier?: string | null;
+}) {
   const map = useRef<MapView>(null);
   const [here, setHere] = useState<LatLng | null>(null);
   const from = usePlace(pickup);
   const to = usePlace(dropoff);
-  const route = useRoadRoute(from.point, to.point);
+  const route = useRoadRoute(driverRoute ? null : from.point, driverRoute ? null : to.point);
+  const serverLine = driverRoute ? decodePolyline(driverRoute).map((p) => ({ latitude: p.lat, longitude: p.lng })) : null;
+  const near = useNearby(from.point ?? here, !!nearby && !driver, tier);
 
   /* Start on the rider, without asking — only if location is already allowed */
   useEffect(() => {
@@ -63,24 +90,31 @@ export function BookingMap({ pickup, dropoff, driver, driverLabel }: { pickup: s
 
   const problem = from.notFound ? "We couldn't find the pickup on the map. Check the address."
     : to.notFound ? "We couldn't find the destination on the map. Check the address." : null;
+  const chip = nearby && !driver
+    ? near.cars.length === 0 ? "No cars nearby right now"
+      : near.nearestMinutes != null ? `Nearest car ${near.nearestMinutes} min away`
+        : `${near.cars.length} car${near.cars.length > 1 ? "s" : ""} nearby`
+    : null;
 
   return (
     <View style={styles.wrap}>
       <MapView ref={map} style={styles.map} initialRegion={WINNIPEG} showsUserLocation={!!here} toolbarEnabled={false} userInterfaceStyle="light"
-        scrollEnabled={false} zoomEnabled={false} rotateEnabled={false} pitchEnabled={false}
+        rotateEnabled={false} pitchEnabled={false}
         accessibilityLabel={from.point && to.point ? "Map of your route" : "Map"}>
-        {route && (
+        {serverLine ? (
+          <Polyline coordinates={serverLine} strokeColor={colors.navy} strokeWidth={4} />
+        ) : route ? (
           <Polyline coordinates={route.coordinates} strokeColor={colors.navy} strokeWidth={4}
             lineDashPattern={route.exact ? undefined : [8, 6]} />
-        )}
+        ) : null}
         {from.point && <Marker coordinate={from.point} title="Pickup" pinColor={colors.navy} />}
         {to.point && <Marker coordinate={to.point} title="Destination" pinColor="#ef4444" />}
-        {driver && (
-          <Marker coordinate={driver} title={driverLabel ?? "Your driver"} anchor={{ x: 0.5, y: 0.5 }}>
-            <View style={styles.driver}><View style={styles.driverDot} /></View>
-          </Marker>
-        )}
+        {driver && <LiveCarMarker point={driver} title={driverLabel ?? "Your driver"} />}
+        {chip && near.cars.map((c) => (
+          <LiveCarMarker key={c.id} point={{ lat: c.lat, lng: c.lng, heading: c.heading, speed: c.heading != null ? 5 : null }} size={32} durationMs={3000} />
+        ))}
       </MapView>
+      {chip && <View style={styles.chip} pointerEvents="none"><Text style={styles.chipText}>{chip}</Text></View>}
       {problem && <Text style={styles.problem}>{problem}</Text>}
     </View>
   );
@@ -88,8 +122,8 @@ export function BookingMap({ pickup, dropoff, driver, driverLabel }: { pickup: s
 
 const styles = StyleSheet.create({
   wrap: { borderRadius: 16, overflow: "hidden", backgroundColor: "#e5e7eb" },
-  map: { height: 190 },
-  driver: { width: 22, height: 22, borderRadius: 11, backgroundColor: "rgba(19,25,54,0.25)", alignItems: "center", justifyContent: "center" },
-  driverDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: colors.navy, borderWidth: 2, borderColor: "#fff" },
+  map: { height: 220 },
+  chip: { position: "absolute", left: 10, top: 10, backgroundColor: "#fff", borderRadius: 999, paddingHorizontal: 11, paddingVertical: 5, shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 4, elevation: 2 },
+  chipText: { fontFamily: fonts.bodySemi, fontSize: 12, color: colors.navy },
   problem: { fontFamily: fonts.body, fontSize: 12, color: "#b91c1c", backgroundColor: "#fef2f2", paddingHorizontal: 12, paddingVertical: 8 },
 });

@@ -153,7 +153,7 @@ export function CityRideBooking({ initialDropoff }: { initialDropoff?: string })
       <ScreenHeader title="Book a City Ride" subtitle="Winnipeg" />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
-          <BookingMap pickup={pickup} dropoff={dropoff} />
+          <BookingMap pickup={pickup} dropoff={dropoff} nearby tier={TIER} />
           <View style={styles.card}>
             <Pressable onPress={() => setSearching("pickup")} style={styles.addr} accessibilityRole="button">
               <View style={[styles.dot, { backgroundColor: colors.navy }]} />

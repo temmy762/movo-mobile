@@ -30,6 +30,7 @@ const FILES = [
   ["lib/vehicleModels.ts", "vehicleModels.ts", relink],
   ["lib/courier/pricing.ts", "courierPricing.ts", relink],
   ["lib/courier/driverContent.ts", "courierDriverContent.ts", relink],
+  ["lib/liveTracking.ts", "liveTracking.ts", relink],
   ["prisma/schema.prisma", "enums.ts", prismaEnums],
 ];
 

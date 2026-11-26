@@ -15,6 +15,9 @@ export const SOCKET_EVENTS = {
   /* ── Trip ── */
   TRIP_STARTED:   "trip.started",
   DRIVER_ARRIVED:  "driver.arrived",
+  /* Live ETA + road route to the pickup (before the trip) or dropoff (during) —
+     computed on the server (lib/liveEta.ts) and shared by every viewer */
+  TRIP_ETA:        "trip.eta",
 
   /* ── Driver ── */
   DRIVER_ONLINE:    "driver.online",

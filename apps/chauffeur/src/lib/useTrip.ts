@@ -82,12 +82,14 @@ export function useTrip(booking: DriverBooking, onProgress?: (p: TripProgress) =
     return () => { sub.remove(); offStarted(); };
   }, [resync, on, booking.id, advance]);
 
-  /* Location goes to the rider only while the trip is under way */
+  /* Location goes to the rider from accepting until the ride ends — they
+     watch the car come to the pickup, then follow the trip */
+  const tracking = step === "accepted" || step === "arrived" || step === "started";
   useEffect(() => {
-    if (step !== "started") return;
+    if (!tracking) return;
     setTripTracking(booking.id);
     return () => { setTripTracking(null); };
-  }, [step, booking.id]);
+  }, [tracking, booking.id]);
 
   useEffect(() => on(SOCKET_EVENTS.BOOKING_ROUTE_UPDATED, (data) => {
     const d = data as { bookingId?: string; dropoff?: string; stops?: unknown; message?: string };

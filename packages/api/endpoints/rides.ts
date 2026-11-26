@@ -1,12 +1,19 @@
 /* A rider's own ride: tracking, cancel, chat, rating */
-import type { BookingMessage, DriverPosition, IncidentType, Receipt, RideDetail } from "@movo/shared";
+import type { BookingMessage, DriverPosition, IncidentType, LiveEta, Receipt, RideDetail } from "@movo/shared";
 import { request } from "../client";
 
 export const detail = (id: string) => request<RideDetail>(`/api/bookings/${id}`);
 
+/* Live nearby cars around a spot (positions rounded ~100 m) + the nearest one's minutes */
+export type NearbyCar = { id: string; lat: number; lng: number; heading: number | null; tier: string | null };
+export const nearbyCars = (lat: number, lng: number, tier?: string | null) =>
+  request<{ cars: NearbyCar[]; nearestMinutes: number | null }>(
+    `/api/drivers/nearby?lat=${lat.toFixed(3)}&lng=${lng.toFixed(3)}${tier ? `&tier=${encodeURIComponent(tier)}` : ""}`,
+  );
+
 /* Last known chauffeur position (live updates arrive on the socket) */
 export const driverLocation = (id: string) =>
-  request<{ position: DriverPosition | null }>(`/api/bookings/${id}/driver-location`);
+  request<{ position: DriverPosition | null; eta?: LiveEta | null }>(`/api/bookings/${id}/driver-location`);
 
 /* Refund follows the cancellation policy: full before a chauffeur is assigned
    or within 5 minutes of booking, otherwise 50% (Safe Ride: return allowance

@@ -89,7 +89,8 @@ export type DriverBooking = {
   dropoffLng?: number | null;
 };
 
-export type LocationPoint = { lat: number; lng: number; timestamp: number };
+/* heading: degrees from north · speed: m/s · accuracy: metres (all optional) */
+export type LocationPoint = { lat: number; lng: number; timestamp: number; heading?: number; speed?: number; accuracy?: number };
 
 /* ── Safe Ride (Care) — GET /api/care/driver ── */
 
@@ -372,7 +373,7 @@ export type RideDetail = {
   } | null;
 };
 
-export type DriverPosition = { lat: number; lng: number; heading?: number | null };
+export type DriverPosition = { lat: number; lng: number; heading?: number | null; speed?: number | null; timestamp?: string | null };
 
 /* GET /api/bookings/:id/receipt — dates already formatted (Winnipeg time) */
 export type Receipt = {

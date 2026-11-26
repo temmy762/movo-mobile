@@ -13,7 +13,7 @@ import { Icon, colors, fonts } from "@movo/ui";
 import { useSession } from "@/lib/session";
 import { BookingMap } from "@/components/BookingMap";
 import { TipCard } from "@/components/TipCard";
-import { pickupWhenLabel } from "@movo/shared";
+import { MOVO_TZ, etaClock, pickupWhenLabel, type LivePoint } from "@movo/shared";
 
 type Party = { name: string; phone: string };
 type CourierBooking = {
@@ -107,7 +107,11 @@ export default function CourierTracking() {
     enabled: live,
     refetchInterval: 6000,
   });
-  const driverPt = live && pos.data?.position ? { latitude: pos.data.position.lat, longitude: pos.data.position.lng } : null;
+  /* The driver's car (gliding, facing its direction) + the server's live route and ETA */
+  const p = pos.data?.position;
+  const driverPt: LivePoint | null = live && p ? { lat: p.lat, lng: p.lng, heading: p.heading, speed: p.speed, ts: p.timestamp ? Date.parse(p.timestamp) : null } : null;
+  const liveEta = live ? pos.data?.eta ?? null : null;
+  const etaFits = !!liveEta && (liveEta.target === "dropoff") === !!b?.courierPickedUpAt;
 
   const cancel = () => Alert.alert("Cancel this delivery?", b?.paymentStatus === "PAID" ? "It hasn't been picked up, so you'll get a full refund." : "Nothing has been charged.", [
     { text: "Keep it", style: "cancel" },
@@ -136,11 +140,15 @@ export default function CourierTracking() {
       {!b ? (q.isError ? <Text style={styles.error}>Couldn&apos;t load this delivery.</Text> : <ActivityIndicator style={{ marginTop: 40 }} color={colors.navy} />) : (
         <ScrollView contentContainerStyle={styles.page} refreshControl={<RefreshControl refreshing={q.isFetching} onRefresh={() => { q.refetch(); }} />}>
           {b.status !== "CANCELLED" && b.status !== "COMPLETED" && (
-            <BookingMap pickup={b.pickup} dropoff={b.dropoff} driver={driverPt} driverLabel={b.driver ? `${b.driver.firstName} (your driver)` : undefined} />
+            <BookingMap pickup={b.pickup} dropoff={b.dropoff} driver={driverPt} driverLabel={b.driver ? `${b.driver.firstName} (your driver)` : undefined}
+              driverRoute={etaFits ? liveEta!.polyline : null} />
           )}
           <View style={styles.card}>
             <Text style={styles.kicker}>{b.courier?.mode === "SCHEDULED" ? "SCHEDULED" : "ONE WAY"} · {b.bookingNumber}</Text>
             <Text style={styles.title}>{headline(b)}</Text>
+            {etaFits && liveEta && (
+              <Text style={styles.eta}>{liveEta.target === "pickup" ? `Driver at the pickup in ${liveEta.minutes} min` : `Arriving in ${liveEta.minutes} min`} · {etaClock(liveEta, MOVO_TZ)}</Text>
+            )}
             {b.status !== "CANCELLED" && (
               <View style={styles.steps}>
                 {[
@@ -214,6 +222,7 @@ export default function CourierTracking() {
 }
 
 const styles = StyleSheet.create({
+  eta: { fontFamily: fonts.bodySemi, fontSize: 14, color: colors.navy, marginTop: 2 },
   screen: { flex: 1, backgroundColor: "#F5F5F2" },
   header: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#fff" },
   back: { width: 36, height: 36, borderRadius: 12, backgroundColor: "#f3f4f6", alignItems: "center", justifyContent: "center" },
