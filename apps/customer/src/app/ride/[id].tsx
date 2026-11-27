@@ -52,6 +52,11 @@ export default function Ride() {
   const [eta, setEta] = useState<LiveEta | null>(null);
   /* The camera follows the car until the rider pans; Recentre brings it back */
   const [pannedIn, setPannedIn] = useState<string | null>(null);
+  /* The rider's own position (the map's blue dot) — framed with the car until pickup */
+  const [me, setMe] = useState<LatLng | null>(null);
+  const meAtRef = useRef(0);
+  /* Full-screen map: the camera frames above the bottom sheet */
+  const [sheetH, setSheetH] = useState(0);
   /* Socket and poll can cross — keep the newest point */
   const acceptPoint = (p: LivePoint) => setPosition((cur) => (isNewer(p, cur) ? p : cur));
   const [cancelOpen, setCancelOpen] = useState(false);
@@ -157,19 +162,18 @@ export default function Ride() {
   const following = pannedIn !== phase;
   const etaText = etaFits && eta ? `${etaLabel(eta)} · ${etaClock(eta, MOVO_TZ)}` : null;
 
-  /* Follow the car with each new position */
+  /* Auto camera, like a navigation app: with every new car (or rider)
+     position, frame the car, where it's heading and — before pickup — the
+     rider, above the sheet. Panning stops it; Recentre brings it back. */
+  const frameKey = [phase, driverPt?.latitude, driverPt?.longitude, pickupPt?.latitude, dropoffPt?.latitude,
+    phase === "on_the_way" ? me?.latitude : null, phase === "on_the_way" ? me?.longitude : null, sheetH, following].join("|");
   useEffect(() => {
-    if (!following || !driverPt) return;
-    map.current?.animateCamera({ center: driverPt }, { duration: 800 });
-  }, [following, driverPt?.latitude, driverPt?.longitude]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* Frame what matters now: chauffeur → pickup before the trip, → drop-off during it */
-  const frameKey = [phase, !!driverPt, pickupPt?.latitude, dropoffPt?.latitude].join("|");
-  useEffect(() => {
+    if (!following) return;
     const target = phase === "in_progress" ? dropoffPt : pickupPt;
-    const points = [driverPt, target, phase === "in_progress" || !driverPt ? dropoffPt : null].filter((p): p is LatLng => !!p);
-    if (points.length > 1) map.current?.fitToCoordinates(points, { edgePadding: { top: 60, right: 60, bottom: 60, left: 60 }, animated: true });
-    else if (points.length === 1) map.current?.animateToRegion({ ...points[0], latitudeDelta: 0.03, longitudeDelta: 0.03 }, 400);
+    const points = [driverPt, target, !driverPt ? dropoffPt : null, phase === "on_the_way" ? me : null].filter((p): p is LatLng => !!p);
+    const edgePadding = { top: 110, right: 60, bottom: sheetH + 40, left: 60 };
+    if (points.length > 1) map.current?.fitToCoordinates(points, { edgePadding, animated: true });
+    else if (points.length === 1) map.current?.animateCamera({ center: points[0], zoom: 16 }, { duration: 800 });
   }, [frameKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const doCancel = async () => {
@@ -227,7 +231,13 @@ export default function Ride() {
   return (
     <View style={styles.screen}>
       <MapView ref={map} style={styles.map} initialRegion={WINNIPEG} showsUserLocation={live} toolbarEnabled={false} userInterfaceStyle="light"
-        onPanDrag={() => { if (following) setPannedIn(phase); }}>
+        onPanDrag={() => { if (following) setPannedIn(phase); }}
+        onUserLocationChange={(e) => {
+          const c = e.nativeEvent.coordinate;
+          if (!c || Date.now() - meAtRef.current < 3000) return;
+          meAtRef.current = Date.now();
+          setMe({ latitude: c.latitude, longitude: c.longitude });
+        }}>
         {route && (
           <Polyline coordinates={route.coordinates} strokeColor={colors.navy} strokeWidth={4}
             lineDashPattern={route.exact ? undefined : [8, 8]} />
@@ -239,7 +249,7 @@ export default function Ride() {
         )}
       </MapView>
       {!following && driverPt && (
-        <Pressable onPress={() => setPannedIn(null)} style={styles.recentre} accessibilityRole="button" accessibilityLabel="Recentre on your driver">
+        <Pressable onPress={() => setPannedIn(null)} style={[styles.recentre, { bottom: sheetH + 14 }]} accessibilityRole="button" accessibilityLabel="Recentre on your driver">
           <Text style={styles.recentreText}>Recentre</Text>
         </Pressable>
       )}
@@ -250,7 +260,9 @@ export default function Ride() {
         {live && <EmergencyButton bookingId={r.id} />}
       </SafeAreaView>
 
-      <ScrollView style={styles.sheet} contentContainerStyle={styles.sheetBody}>
+      <ScrollView style={styles.sheet} contentContainerStyle={styles.sheetBody}
+        onLayout={(e) => setSheetH(Math.round(e.nativeEvent.layout.height))}>
+        <View style={styles.handle} />
         <View style={styles.between}>
           <Text style={styles.kicker}>{r.bookingType === "CARE" ? "Safe Ride" : r.carName}</Text>
           {live && <View style={styles.liveDot} />}
@@ -470,16 +482,17 @@ function RateChauffeur({ id, name }: { id: string; name?: string }) {
 
 const styles = StyleSheet.create({
   eta: { fontFamily: fonts.bodySemi, fontSize: 15, color: colors.navy, marginTop: 2 },
-  recentre: { position: "absolute", right: 14, top: "34%", backgroundColor: "#fff", borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 6, elevation: 3 },
+  recentre: { position: "absolute", right: 14, zIndex: 3, backgroundColor: "#fff", borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8, shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 6, elevation: 3 },
   recentreText: { fontFamily: fonts.bodySemi, fontSize: 13, color: colors.navy },
   screen: { flex: 1, backgroundColor: "#F5F5F2" },
   center: { alignItems: "center", justifyContent: "center", gap: 10 },
-  map: { height: "42%" },
+  map: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
   topBar: { position: "absolute", top: 0, left: 0, right: 0, paddingHorizontal: 16, paddingTop: 8, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   back: { width: 40, height: 40, borderRadius: 14, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 6, elevation: 3 },
   car: { width: 26, height: 26, borderRadius: 13, backgroundColor: "rgba(19,25,54,0.25)", alignItems: "center", justifyContent: "center" },
   carDot: { width: 14, height: 14, borderRadius: 7, backgroundColor: colors.navy, borderWidth: 2, borderColor: "#fff" },
-  sheet: { flex: 1, marginTop: -20, backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24 },
+  sheet: { position: "absolute", left: 0, right: 0, bottom: 0, maxHeight: "56%", backgroundColor: "#fff", borderTopLeftRadius: 24, borderTopRightRadius: 24, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 12, elevation: 8 },
+  handle: { alignSelf: "center", width: 40, height: 5, borderRadius: 3, backgroundColor: "#d1d5db", marginTop: -8 },
   sheetBody: { padding: 20, gap: 14, paddingBottom: 40 },
   between: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   kicker: { fontFamily: fonts.bodySemi, fontSize: 11, color: "#6b7280", letterSpacing: 0.4 },

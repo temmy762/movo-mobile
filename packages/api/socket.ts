@@ -7,7 +7,8 @@ import { io, type Socket } from "socket.io-client";
 import type { SocketEventName } from "@movo/shared";
 import { apiBaseUrl } from "./client";
 
-export type JoinOptions = { bookingId?: string; tier?: string };
+/* nearby: the booking map's live nearby cars (riders only) */
+export type JoinOptions = { bookingId?: string; tier?: string; nearby?: boolean };
 
 export type MovoSocket = {
   socket: Socket;

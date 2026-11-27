@@ -4,8 +4,10 @@
  * set. Addresses are placed through movo-web (/api/places/geocode) and the
  * line follows the roads (/api/places/route).
  *
- * `nearby`: live nearby cars around the pickup (or you), refreshed every
- * 10 s, gliding and facing their direction, with "nearest car N min away".
+ * `nearby`: live nearby cars around the pickup (or you), gliding and facing
+ * their direction, with "nearest car N min away". Moves are pushed over the
+ * socket ("nearby" room); the API gives the first snapshot and the nearest
+ * car's minutes once a minute (every 10 s only while the socket is down).
  * `driver`: a live driver to follow instead (Movo Courier tracking), with the
  * server's route line when given.
  */
@@ -15,7 +17,8 @@ import MapView, { Marker, Polyline, type LatLng } from "react-native-maps";
 import * as Location from "expo-location";
 import { useQuery } from "@tanstack/react-query";
 import { places, rides } from "@movo/api";
-import { decodePolyline, type LivePoint } from "@movo/shared";
+import { SOCKET_EVENTS, decodePolyline, metresBetween, type LivePoint } from "@movo/shared";
+import { useSocket } from "@/lib/socket";
 import { colors, fonts } from "@movo/ui";
 import { useRoadRoute } from "@/lib/useRoadRoute";
 import { LiveCarMarker } from "./LiveCarMarker";
@@ -38,18 +41,64 @@ function usePlace(address: string) {
   return { point, notFound: a.length >= 3 && q.isError };
 }
 
-/* Live nearby cars around a spot, every 10 s */
+type Car = { id: string; lat: number; lng: number; heading: number | null; tier: string | null };
+const RADIUS_M = 25_000;
+const STALE_MS = 45_000;
+
+/* Live nearby cars around a spot: API snapshot + socket moves */
 function useNearby(center: LatLng | null, enabled: boolean, tier?: string | null) {
   const lat = center ? Math.round(center.latitude * 1000) / 1000 : null;
   const lng = center ? Math.round(center.longitude * 1000) / 1000 : null;
+  const { connected, join, on } = useSocket();
+  const [live, setLive] = useState<Map<string, Car & { seen: number }>>(new Map());
+  const [gone, setGone] = useState<Set<string>>(new Set());
+  const on2 = enabled && lat != null && lng != null;
   const q = useQuery({
     queryKey: ["nearby-cars", lat, lng, tier ?? ""],
     queryFn: () => rides.nearbyCars(lat!, lng!, tier),
-    enabled: enabled && lat != null && lng != null,
-    refetchInterval: 10_000,
+    enabled: on2,
+    refetchInterval: connected ? 60_000 : 10_000,
     staleTime: 5_000,
   });
-  return q.data ?? { cars: [], nearestMinutes: null };
+
+  useEffect(() => { if (on2 && connected) join({ nearby: true }); }, [on2, connected, join]);
+
+  /* A new snapshot replaces what the socket built up */
+  const snapAt = q.dataUpdatedAt;
+  useEffect(() => { setLive(new Map()); setGone(new Set()); }, [snapAt]);
+
+  useEffect(() => {
+    if (!on2) return;
+    const off = on(SOCKET_EVENTS.DRIVERS_NEARBY, (raw) => {
+      const d = raw as Partial<Car> & { id?: string; offline?: boolean };
+      if (!d?.id) return;
+      const id = d.id;
+      if (d.offline) {
+        setGone((g) => new Set(g).add(id));
+        setLive((m) => { const n = new Map(m); n.delete(id); return n; });
+        return;
+      }
+      if (typeof d.lat !== "number" || typeof d.lng !== "number") return;
+      const car: Car = { id, lat: d.lat, lng: d.lng, heading: d.heading ?? null, tier: d.tier ?? null };
+      const inRange = metresBetween({ lat: lat!, lng: lng! }, car) <= RADIUS_M && (!tier || car.tier === tier);
+      setGone((g) => { if (inRange && !g.has(id)) return g; const n = new Set(g); if (inRange) n.delete(id); else n.add(id); return n; });
+      setLive((m) => { const n = new Map(m); if (inRange) n.set(id, { ...car, seen: Date.now() }); else n.delete(id); return n; });
+    });
+    /* Cars that stopped sending drop off the map */
+    const prune = setInterval(() => {
+      const now = Date.now();
+      setLive((m) => {
+        const stale = [...m.values()].filter((c) => now - c.seen > STALE_MS).map((c) => c.id);
+        if (!stale.length) return m;
+        setGone((g) => { const n = new Set(g); stale.forEach((s) => n.add(s)); return n; });
+        const n = new Map(m); stale.forEach((s) => n.delete(s)); return n;
+      });
+    }, 10_000);
+    return () => { off(); clearInterval(prune); };
+  }, [on, on2, lat, lng, tier]);
+
+  const base = (q.data?.cars ?? []).filter((c) => !gone.has(c.id) && !live.has(c.id));
+  return { cars: [...base, ...live.values()] as Car[], nearestMinutes: q.data?.nearestMinutes ?? null };
 }
 
 export function BookingMap({ pickup, dropoff, driver, driverLabel, driverRoute, nearby, tier }: {

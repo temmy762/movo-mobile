@@ -23,6 +23,9 @@ export const SOCKET_EVENTS = {
   DRIVER_ONLINE:    "driver.online",
   DRIVER_OFFLINE:   "driver.offline",
   DRIVER_LOCATION:  "driver.location",
+  /* An online City Ride car moved (rounded ~100 m) or went offline — for the
+     riders' booking maps ("nearby" room) */
+  DRIVERS_NEARBY:   "drivers.nearby",
   /* Rider's live position → assigned chauffeur (pickup phase) */
   RIDER_LOCATION:   "rider.location",
   DRIVER_APPROVED:  "driver.approved",
