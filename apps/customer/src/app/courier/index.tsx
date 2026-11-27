@@ -6,7 +6,7 @@
  * The customer sees one total (GST incl.) and the extra-pickups line; the
  * travel fee is internal. Pay at the door is One Way only.
  */
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -121,6 +121,7 @@ export default function CourierBooking() {
   const [cardId, setCardId] = useState<string | null | undefined>(undefined);
 
   const [estimate, setEstimate] = useState<CourierEstimate | null>(null);
+  const [pricing, setPricing] = useState(false);
   const [paidIntent, setPaidIntent] = useState<string | null>(null);
 
   const me = meEdit ?? { name: user ? `${user.firstName} ${user.lastName}`.trim() : "", phone: user?.phone ?? "" };
@@ -138,6 +139,48 @@ export default function CourierBooking() {
 
   usePreventRemove(!paidIntent && step > 1, () => setStep((s) => (s - 1) as 1 | 2));
 
+  /* Step 3 is ready to price: the same checks the booking needs */
+  const step3Problem = (): string | null => {
+    if (!description.trim()) return "Describe the package.";
+    if (!size) return "Choose the package size.";
+    if (value === "" || Number(value) < 0) return "Enter the package value.";
+    if (limits && Number(value) > limits.maxPackageValue) return `We carry packages worth up to $${limits.maxPackageValue.toFixed(0)}.`;
+    if (weightLb && Number(weightLb) > lb) return `Packages can weigh up to ${lb} lb.`;
+    if (!allowed) return "Please confirm the package has none of the items we don't carry.";
+    if (!sender.name.trim() || !phoneOk(sender.phone)) return "Enter the sender's name and mobile number.";
+    if (!receiver.name.trim() || !phoneOk(receiver.phone)) return "Enter the receiver's name and mobile number.";
+    return null;
+  };
+
+  const fetchEstimate = () => courier.estimate({
+    routeId, direction, mode, runDate: mode === "SCHEDULED" ? runDate : null,
+    pickupDate: mode === "ONE_WAY" && pickupWhen === "LATER" ? pickupDate : null,
+    pickupTime: mode === "ONE_WAY" && pickupWhen === "LATER" ? pickupTime : null,
+    pickupWindow: mode === "SCHEDULED" ? pickupWindow : null,
+    winnipegAddress, townAddress, extraStops: stops.filter(Boolean),
+    package: { description: description.trim(), size: size!, value: Number(value), weightKg: weightLb ? Number(weightLb) / 2.20462 : null },
+    orderedBy, payMethod: pay, sender: { name: sender.name.trim(), phone: sender.phone.trim() },
+    receiver: { name: receiver.name.trim(), phone: receiver.phone.trim() }, leaveAtDoor, instructions: notes.trim() || null,
+  });
+
+  /* The total appears by itself once the details are complete (and updates
+     after any change) — no separate "See price" tap */
+  const fetchRef = useRef(fetchEstimate);
+  useEffect(() => { fetchRef.current = fetchEstimate; });
+  const ready = step === 3 && !estimate && !paidIntent && !step3Problem();
+  useEffect(() => {
+    if (!ready) return;
+    let live = true;
+    const t = setTimeout(() => {
+      setPricing(true);
+      fetchRef.current()
+        .then((e) => { if (live) setEstimate(e); })
+        .catch(() => {}) /* shown when they tap Book */
+        .finally(() => { if (live) setPricing(false); });
+    }, 600);
+    return () => { live = false; clearTimeout(t); };
+  }, [ready, description, size, value, weightLb, allowed, stops, orderedBy, meEdit, other, leaveAtDoor, notes, payMethod]);
+
   const next = async () => {
     setError(null);
     if (step === 1) {
@@ -152,45 +195,27 @@ export default function CourierBooking() {
       if (mode === "ONE_WAY" && pickupWhen === "LATER" && (!pickupDate || !pickupTime)) return setError("Choose a pickup day and time.");
       return setStep(3);
     }
-    if (!estimate) {
-      if (!description.trim()) return setError("Describe the package.");
-      if (!size) return setError("Choose the package size.");
-      if (value === "" || Number(value) < 0) return setError("Enter the package value.");
-      if (limits && Number(value) > limits.maxPackageValue) return setError(`We carry packages worth up to $${limits.maxPackageValue.toFixed(0)}.`);
-      if (weightLb && Number(weightLb) > lb) return setError(`Packages can weigh up to ${lb} lb.`);
-      if (!allowed) return setError("Please confirm the package has none of the items we don't carry.");
-      if (!sender.name.trim() || !phoneOk(sender.phone)) return setError("Enter the sender's name and mobile number.");
-      if (!receiver.name.trim() || !phoneOk(receiver.phone)) return setError("Enter the receiver's name and mobile number.");
-      setBusy(true);
-      try {
-        setEstimate(await courier.estimate({
-          routeId, direction, mode, runDate: mode === "SCHEDULED" ? runDate : null,
-          pickupDate: mode === "ONE_WAY" && pickupWhen === "LATER" ? pickupDate : null,
-          pickupTime: mode === "ONE_WAY" && pickupWhen === "LATER" ? pickupTime : null,
-          pickupWindow: mode === "SCHEDULED" ? pickupWindow : null,
-          winnipegAddress, townAddress, extraStops: stops.filter(Boolean),
-          package: { description: description.trim(), size, value: Number(value), weightKg: weightLb ? Number(weightLb) / 2.20462 : null },
-          orderedBy, payMethod: pay, sender: { name: sender.name.trim(), phone: sender.phone.trim() },
-          receiver: { name: receiver.name.trim(), phone: receiver.phone.trim() }, leaveAtDoor, instructions: notes.trim() || null,
-        }));
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Couldn't price this delivery.");
-      } finally {
-        setBusy(false);
-      }
-      return;
+    if (!paidIntent) {
+      const problem = step3Problem();
+      if (problem) return setError(problem);
     }
-    /* Pay (in app) and book — safe to retry: a paid intent never books twice */
+    /* One tap: price (if not shown yet), pay (in app) and book — safe to
+       retry: a paid intent never books twice */
     setBusy(true);
     let intentId = paidIntent;
     try {
+      let est = estimate;
+      if (!est) {
+        est = await fetchEstimate();
+        setEstimate(est);
+      }
       if (pay === "APP" && !intentId) {
-        const r = await payForQuote(estimate.quote, { name: me.name, email: user?.email }, cardId);
+        const r = await payForQuote(est.quote, { name: me.name, email: user?.email }, cardId);
         if (r.status === "canceled") return;
         intentId = r.intentId;
         setPaidIntent(intentId);
       }
-      const b = await courier.book(estimate.quote, intentId ?? undefined);
+      const b = await courier.book(est.quote, intentId ?? undefined);
       router.replace({ pathname: "/courier/[id]", params: { id: b.id } });
     } catch (e) {
       const msg = e instanceof ApiError && e.status !== 0 ? e.message : e instanceof Error ? e.message : "Something went wrong.";
@@ -208,8 +233,8 @@ export default function CourierBooking() {
   };
 
   const cta = step < 3 ? "Continue"
-    : !estimate ? "See price"
-      : paidIntent ? "Finish booking"
+    : paidIntent ? "Finish booking"
+      : !estimate ? (pay === "APP" ? "Pay & book" : "Book")
         : pay === "APP" ? `Pay ${money(estimate.total)} & book` : `Book · ${money(estimate.total)} due at the door`;
 
   return (
@@ -427,7 +452,15 @@ export default function CourierBooking() {
                     <Text style={styles.muted}>CAD, GST included. {limits.freeWaitingMinutes} minutes free waiting at each stop, then ${limits.waitingRatePerMin.toFixed(2)}/min.</Text>
                   </View>
                 )}
-                {estimate && pay === "APP" && !paidIntent && <CardPicker value={cardId} onChange={setCardId} />}
+                {!estimate && (
+                  <View style={styles.price}>
+                    <View style={styles.between}>
+                      <Text style={styles.total}>Total</Text>
+                      {pricing ? <ActivityIndicator color={colors.navy} /> : <Text style={styles.muted}>Shown once the details above are filled in</Text>}
+                    </View>
+                  </View>
+                )}
+                {pay === "APP" && !paidIntent && <CardPicker value={cardId} onChange={setCardId} />}
               </>
             )}
 
